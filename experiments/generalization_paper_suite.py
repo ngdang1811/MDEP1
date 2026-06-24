@@ -426,7 +426,7 @@ def run_one(benchmark: str, experiment_name: str, args: argparse.Namespace, seed
         metrics.update(uncertainty_separation_metrics(
             outputs["y_true"],
             outputs["y_pred"],
-            outputs["u_e"],
+            outputs.get("u_e", None),
             outputs["u_a"],
         ))
 
