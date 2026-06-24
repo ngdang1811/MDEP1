@@ -423,6 +423,7 @@ def run_one(benchmark: str, experiment_name: str, args: argparse.Namespace, seed
                 "high_recall": float(thresholds.get("high_recall", thresholds.get("rule_out", 0.5))),
             },
         ))
+        if u_e_data is not None and u_a_data is not None:
         metrics.update(uncertainty_separation_metrics(
             outputs["y_true"],
             outputs["y_pred"],
