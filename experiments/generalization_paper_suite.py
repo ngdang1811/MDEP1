@@ -427,7 +427,7 @@ def run_one(benchmark: str, experiment_name: str, args: argparse.Namespace, seed
             outputs["y_true"],
             outputs["y_pred"],
             outputs.get("u_e", None),
-            outputs["u_a"],
+            outputs.get("u_a", None),
         ))
 
     if spec.sparse:
