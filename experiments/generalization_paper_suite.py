@@ -423,13 +423,16 @@ def run_one(benchmark: str, experiment_name: str, args: argparse.Namespace, seed
                 "high_recall": float(thresholds.get("high_recall", thresholds.get("rule_out", 0.5))),
             },
         ))
+        u_e_data = outputs.get("u_e", None)
+        u_a_data = outputs.get("u_a", None)
+        
     if u_e_data is not None and u_a_data is not None:
-        metrics.update(uncertainty_separation_metrics(    # <--- Đã được lùi vào
-            outputs["y_true"],                            # <--- Đã được lùi vào
-            outputs["y_pred"],                            # <--- Đã được lùi vào
-            outputs.get("u_e", None),                     # <--- Đã được lùi vào
-            outputs.get("u_a", None)                      # <--- Đã được lùi vào
-        ))                                                # <--- Đã được lùi vào
+            metrics.update(uncertainty_separation_metrics(
+                outputs["y_true"],
+                outputs["y_pred"],
+                u_e_data,   # Đã đổi thành biến an toàn
+                u_a_data    # Đã đổi thành biến an toàn
+            ))                                             # <--- Đã được lùi vào
 
     if spec.sparse:
         print_sparsity_report(model)
