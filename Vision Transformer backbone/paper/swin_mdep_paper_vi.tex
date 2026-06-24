@@ -1,0 +1,979 @@
+% ============================================================================
+%  Swin-MDEP: Microglial-Driven Evidential Pruning with Shifted-Window
+%  Vision Transformer Backbones for Calibrated Melanoma Detection
+%
+%  Bản dịch tiếng Việt hoàn chỉnh và được trau chuốt theo văn phong nghiên cứu khoa học.
+% ============================================================================
+\documentclass[11pt]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{cleveref}
+\usepackage{bm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric, fit, calc, decorations.pathreplacing, backgrounds}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+
+% --- Việt hóa tiêu đề thuật toán và môi trường ---
+\renewcommand{\algorithmicrequire}{\textbf{Đầu vào:}}
+\renewcommand{\algorithmicensure}{\textbf{Đầu ra:}}
+\floatname{algorithm}{Thuật toán}
+
+% --- Theorem environments ---
+\newtheorem{definition}{Định nghĩa}
+\newtheorem{proposition}{Mệnh đề}
+\newtheorem{remark}{Lưu ý}
+
+% --- Custom commands ---
+\newcommand{\Dir}{\text{Dir}}
+\newcommand{\KL}{D_{\text{KL}}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Norm}{\text{Norm}}
+\newcommand{\diag}{\text{diag}}
+\DeclareMathOperator{\lgamma}{lgamma}
+\DeclareMathOperator{\softplus}{Softplus}
+
+% --- Title ---
+\title{%
+  \textbf{Swin-MDEP: Cắt tỉa Chứng cứ hướng Vi bào đệm\\
+  với Mạng xương sống Vision Transformer Cửa sổ Dịch chuyển\\
+  trong Phân loại Ung thư Hắc tố được Hiệu chuẩn}%
+}
+
+\author{
+  Minh Đức \\
+  MDEP Research \\
+  \texttt{minhduc110207@github.com}
+}
+
+\date{\today}
+
+% ============================================================================
+\begin{document}
+\maketitle
+
+% ============================================================================
+%  ABSTRACT
+% ============================================================================
+\begin{abstract}
+Sàng lọc da liễu dưới sự mất cân bằng nhóm nghiêm trọng, chẳng hạn như trong đoàn hệ ISIC 2024 khi tỷ lệ nhiễm ung thư hắc tố thấp hơn $0.15\%$, đòi hỏi các hệ thống học sâu phải đạt được đồng thời độ chính xác cao, hiệu chuẩn tốt trong các ước lượng độ bất định và tính hiệu quả trong tính toán để sẵn sàng triển khai. Các mạng thần kinh tích chập thông thường bị giới hạn bởi trường tiếp thụ cục bộ, trong khi các mạng Vision Transformer toàn cục (ViT) lại thường xuyên gặp phải hiện tượng sụp đổ biểu diễn khi tối ưu hóa dưới các phân phối lớp cực kỳ lệch chuẩn. Để giải quyết các thách thức này, chúng tôi giới thiệu \textbf{Swin-MDEP}, một khung làm việc nhận biết độ bất định tích hợp mạng xương sống \emph{Shifted-Window Transformer} (Swin-T) phân cấp với công cụ \emph{Cắt tỉa Chứng cứ hướng Vi bào đệm} (MDEP) đa tác tử. Chúng tôi thiết lập nhiệm vụ phân loại bằng phương pháp \emph{Học sâu Chứng cứ} (EDL), mô tả các xác suất lớp dưới dạng phân phối Dirichlet để phân tách một cách toán học độ bất định dự đoán thành các thành phần riêng biệt gồm bất định nhận thức (epistemic - do thiếu tri thức của mô hình) và bất định ngẫu nhiên (aleatoric - do nhiễu vốn có trong dữ liệu). Để đảm bảo tính hiệu quả khi chạy thực tế (test-time), chúng tôi áp dụng các ràng buộc thưa cấu trúc \emph{NVIDIA 2:4 structured sparsity} lên các lớp chiếu bên trong các khối tự chú ý và perceptron đa lớp (MLP). Cấu trúc liên kết mạng được tối ưu hóa động trong quá trình huấn luyện bởi hai tác tử lấy cảm hứng từ sinh học tác động trên các điểm số ẩn liên tục: tác tử \textbf{Vi bào đệm} (Microglia) thực hiện cắt tỉa chọn lọc các liên kết dư thừa hoặc khuếch đại nhiễu dựa trên gradient tác vụ và các tín hiệu ngẫu nhiên, và tác tử \textbf{Tế bào sao} (Astrocyte) thúc đẩy sự phát triển liên kết tại các nút đặc trưng bởi độ bất định nhận thức cao. Để ngăn chặn hiện tượng sụp đổ biểu diễn ở giai đoạn đầu, chúng tôi thiết lập một giao thức \emph{chưng cất phân kỳ KL Dirichlet} truyền bối cảnh bất định từ một mô hình ResNet-18 Evidential giáo viên đặc và hội tụ sang mô hình học sinh Swin-T thưa, được lập lịch thông qua một hàm suy giảm cosin. Chúng tôi cung cấp các suy dẫn toán học đầy đủ, sơ đồ hệ thống, mô tả thuật toán và một bộ chỉ số đánh giá lâm sàng toàn diện minh chứng cho tính ổn định, độ hiệu chuẩn và các ưu thế tính toán của Swin-MDEP.
+\end{abstract}
+
+% ============================================================================
+%  1. GIỚI THIỆU
+% ============================================================================
+\section{Giới thiệu}\label{sec:intro}
+
+Ung thư hắc tố (melanoma) vẫn là một trong những dạng ung thư da xâm lấn và gây tử vong cao nhất. Việc sàng lọc sớm bằng hình ảnh nội soi da là cực kỳ quan trọng, do các can thiệp ở giai đoạn đầu tương quan với tỷ lệ sống sót sau năm năm vượt quá $99\%$. Tuy nhiên, việc huấn luyện các hệ thống chẩn đoán tự động trên các tập dữ liệu ảnh nội soi da lâm sàng bị cản trở bởi sự mất cân bằng lớp nghiêm trọng. Ví dụ, trong tập dữ liệu chuẩn ISIC 2024, các trường hợp ác tính chiếm chưa đầy $0.15\%$ tổng cơ sở dữ liệu hình ảnh. Dưới phân phối huấn luyện lệch chuẩn nghiêm trọng này, các mạng thần kinh sâu tiêu chuẩn được tối ưu hóa bằng hao tổn entropy chéo softmax rất dễ đưa ra các dự đoán quá tự tin nhưng sai lệch. Mô hình dễ dàng hội tụ về một bộ dự đoán lớp đa số tầm thường, gây ra sự sụp đổ hoàn toàn của độ nhạy lâm sàng ($\text{Sensitivity} \to 0$).
+
+Để giảm bớt các hạn chế này, hai hướng tiếp cận riêng biệt đã được phát triển:
+\begin{enumerate}[label=(\roman*)]
+    \item \textbf{Học sâu Chứng cứ (EDL)}~\cite{sensoy2018evidential} thay thế kích hoạt softmax tất định của các bộ phân loại tiêu chuẩn bằng một phân phối Dirichlet được tham số hóa. Cách thiết lập logic chủ quan này cho phép mô hình biểu diễn rõ ràng các phân phối xác suất lớp trên một đơn hình, cung cấp cơ sở toán học chính thống để định lượng các độ bất định nhận thức và ngẫu nhiên.
+    \item \textbf{Huấn luyện Thưa Động (DST)}~\cite{evci2020rigging} tối ưu hóa động cấu trúc liên kết tham số đang hoạt động trong suốt pha huấn luyện. Bằng cách chỉ giữ lại một phần nhỏ các liên kết hoạt động, DST giảm đáng kể dấu chân tính toán trong khi vẫn bảo toàn khả năng biểu diễn của mạng.
+\end{enumerate}
+
+Khung làm việc \textbf{Cắt tỉa Chứng cứ hướng Vi bào đệm (MDEP)} được đề xuất gần đây đã kết nối hai hướng tiếp cận này. MDEP sử dụng các tín hiệu bất định chứng cứ nội bộ của mạng để dẫn dắt quá trình cắt tỉa và phát triển của các trọng số, mô phỏng động lực học hợp tác của vi bào đệm và tế bào sao trong quá trình phát triển thần kinh sinh học. Ban đầu được thiết kế cho các mạng thần kinh tích chập (ví dụ: ResNet-50), các tín hiệu cắt tỉa của MDEP được suy dẫn từ các gradient bất định ở cấp độ trọng số và kích hoạt. Tuy nhiên, việc điều chỉnh cơ chế này tương thích với Vision Transformer (ViT) đặt ra các thách thức cấu trúc đặc thù. Trong khi các phép tích chập có các định kiến quy nạp không gian cứng nhắc, ViT phụ thuộc vào cơ chế tự chú ý với các dạng hình token biến đổi và các tensor kích hoạt số chiều cao.
+
+\textbf{Đóng góp.} Trong nghiên cứu này, chúng tôi trình bày một công thức toán học và hệ thống chặt chẽ của Swin-MDEP. Cụ thể, chúng tôi:
+\begin{enumerate}[label=(\arabic*)]
+    \item Thiết lập công thức tích hợp toán học của mạng xương sống \emph{Shifted-Window Transformer} (Swin-T) phân cấp với công cụ MDEP. Để đạt được điều này, chúng tôi giới thiệu cơ chế gom cụm gradient kích hoạt tổng quát cho tác tử Tế bào sao nhằm thống nhất các tensor lưới không gian đa chiều qua các giai đoạn của Swin.
+    \item Suy dẫn biểu thức dạng đóng toán học cho \emph{chưng cất phân kỳ KL Dirichlet} giữa các phân phối chứng cứ của giáo viên và học sinh. Chúng tôi lập lịch cho trọng số chưng cất $\alpha_d(t)$ thông qua một hàm suy giảm cosin để định vị bối cảnh bất định của học sinh trong giai đoạn huấn luyện ban đầu trước khi cho phép nó chuyên biệt hóa trên các nhãn lâm sàng thực tế.
+    \item Phát triển công thức \emph{Hao tổn Tiêu điểm Chứng cứ} được tối ưu hóa cho phân loại mất cân bằng, tích hợp entropy chéo dựa trên digamma, tầm quan trọng của mẫu theo trọng số lớp với cơ chế giảm nhẹ tần suất bằng căn bậc hai, và một bộ chuẩn hóa KL tăng dần.
+    \item Triển khai và xác minh toàn bộ luồng huấn luyện dưới ràng buộc thưa cấu trúc nghiêm ngặt NVIDIA 2:4. Chúng tôi cung cấp các công cụ chẩn đoán hệ thống để giám sát sự sụp đổ biểu diễn, độ sẵn sàng phần cứng và các chỉ số hiệu chuẩn lâm sàng (ví dụ: chỉ số Brier, Sai số Hiệu chuẩn Kỳ vọng (ECE) và AUROC từng phần).
+\end{enumerate}
+
+% ============================================================================
+%  2. CƠ SỞ TOÁN HỌC
+% ============================================================================
+\section{Cơ sở Toán học}\label{sec:foundations}
+
+\subsection{Logic Chủ quan và Phân phối Dirichlet}\label{subsec:dirichlet}
+
+Logic Chủ quan (SL) chính thức hóa mối quan hệ giữa chứng cứ và niềm tin. Đối với bài toán phân loại $K$ lớp, SL ánh xạ đầu ra chứng cứ của mạng thần kinh tới một phân phối Dirichlet, đóng vai trò là liên hợp tiên nghiệm cho phân phối phân loại.
+
+\begin{definition}[Phân phối Dirichlet]
+Gọi $\Delta^{K-1} = \{\bm{p} \in \R^K : p_c \ge 0,\; \sum_{c=1}^K p_c = 1\}$ là đơn hình xác suất $(K{-}1)$ chiều. Hàm mật độ xác suất của phân phối Dirichlet $\Dir(\bm{\alpha})$ được tham số hóa bởi vectơ nồng độ $\bm{\alpha} = [\alpha_1, \dots, \alpha_K]^T \in \R^K_+$ được định nghĩa là:
+\begin{equation}\label{eq:dirichlet_pdf}
+    p(\bm{p} \mid \bm{\alpha}) = \frac{1}{\mathcal{B}(\bm{\alpha})} \prod_{c=1}^K p_c^{\alpha_c - 1} = \frac{\Gamma\!\left(\sum_{c=1}^K \alpha_c\right)}{\prod_{c=1}^K \Gamma(\alpha_c)} \prod_{c=1}^K p_c^{\alpha_c - 1}, \quad \bm{p} \in \Delta^{K-1}
+\end{equation}
+trong đó $\Gamma(\cdot)$ đại diện cho hàm Gamma, và $\mathcal{B}(\bm{\alpha})$ là hàm Beta đa biến.
+\end{definition}
+
+Trong EDL, mạng xuất ra một vectơ chứng cứ không âm $\bm{e} = [e_1, \dots, e_K]^T \ge \bm{0}$, dùng để tham số hóa phân phối Dirichlet.
+
+\subsection{Tham số hóa Chứng cứ}\label{subsec:evidence}
+
+Để xây dựng vectơ chứng cứ $\bm{e}$ từ các dự đoán logit thô của mạng $\bm{z} \in \R^K$, chúng tôi áp dụng kích hoạt Softplus nhằm đảm bảo tính không âm:
+\begin{equation}\label{eq:evidence}
+    e_c = \softplus(z_c) = \ln(1 + \exp(z_c)), \quad c = 1, \dots, K
+\end{equation}
+Để duy trì tính ổn định số học trong các tính toán hạ nguồn của hàm gamma và digamma, chúng tôi giới hạn chứng cứ ở giá trị cực đại $e_{\max} = 20.0$, tức là $e_c \leftarrow \min(e_c, e_{\max})$.
+
+Các tham số nồng độ Dirichlet $\bm{\alpha}$ được thiết lập bằng cách cộng thêm một phân phối tiên nghiệm đồng nhất $1.0$ vào chứng cứ dự đoán:
+\begin{equation}\label{eq:alpha}
+    \alpha_c = e_c + 1.0, \quad c = 1, \dots, K
+\end{equation}
+Việc cộng thêm $1.0$ này ánh xạ $\bm{e} = \bm{0}$ về phân phối Dirichlet đồng nhất $\Dir(\bm{1})$, đại diện cho trạng thái không biết gì trước đó. Tổng độ mạnh Dirichlet $S$ được định nghĩa là:
+\begin{equation}\label{eq:strength}
+    S = \sum_{c=1}^K \alpha_c = \sum_{c=1}^K e_c + K
+\end{equation}
+
+\subsection{Ước lượng Xác suất Kỳ vọng}\label{subsec:expected_prob}
+
+Dưới phân phối Dirichlet $\Dir(\bm{\alpha})$, xác suất kỳ vọng $\hat{p}_c$ của lớp $c$ tương ứng với giá trị trung bình của phân phối:
+\begin{equation}\label{eq:expected_p}
+    \hat{p}_c = \E_{\bm{p} \sim \Dir(\bm{\alpha})}[p_c] = \int_{\Delta^{K-1}} p_c \, p(\bm{p} \mid \bm{\alpha}) \, d\bm{p} = \frac{\alpha_c}{S}
+\end{equation}
+
+\begin{remark}
+Khi không có chứng cứ dự đoán ($\bm{e} = \bm{0}$), tổng độ mạnh Dirichlet là $S = K$, cho ra xác suất kỳ vọng $\hat{p}_c = 1/K$, khớp với phân phối đồng nhất.
+\end{remark}
+
+\subsection{Phân tách Độ bất định Dự đoán}\label{subsec:uncertainty}
+
+Một ưu điểm lớn của EDL là khả năng phân tách độ bất định dự đoán thành các thành phần nhận thức (epistemic - hướng mô hình) và ngẫu nhiên (aleatoric - hướng dữ liệu) một cách chính thống.
+
+\subsubsection{Độ bất định Nhận thức ($u_e$)}
+
+Độ bất định nhận thức phản ánh sự thiếu quen thuộc của mô hình đối với mẫu đầu vào do các biểu diễn huấn luyện thưa thớt. Trong Logic Chủ quan, nó được định nghĩa là khối lượng niềm tin còn trống:
+\begin{equation}\label{eq:u_e}
+    u_e = \frac{K}{S} = \frac{K}{\sum_{c=1}^K \alpha_c}
+\end{equation}
+Khi chứng cứ được tích lũy ($S \to \infty$), độ bất định nhận thức suy giảm tiệm cận về $0$.
+
+\begin{proposition}[Giới hạn Độ bất định Nhận thức]
+Với mọi vectơ nồng độ hợp lệ $\bm{\alpha}$ được xây dựng qua Phương trình~\ref{eq:alpha}, $u_e \in (0, 1]$. Giá trị cực đại $u_e = 1.0$ đạt được khi và chỉ khi $\bm{e} = \bm{0}$.
+\end{proposition}
+
+\subsubsection{Độ bất định Ngẫu nhiên ($u_a$)}
+
+Độ bất định ngẫu nhiên đo lường entropy thống kê và ranh giới lớp chồng lấn của dữ liệu đầu vào (ví dụ: điều kiện ánh sáng kém hoặc bị tóc che lấp). Chúng tôi định nghĩa $u_a$ thông qua thông tin tương hỗ giữa các tham số phân phối phân loại và nhãn lớp, cho ra công thức~\cite{malinin2018predictive}:
+\begin{equation}\label{eq:u_a}
+    u_a = \sum_{c=1}^K \frac{\alpha_c}{S} \left[ \psi(S + 1) - \psi(\alpha_c + 1) \right]
+\end{equation}
+trong đó $\psi(x) = \frac{d}{dx}\ln\Gamma(x)$ là hàm digamma.
+
+\begin{proposition}[Tính không âm của Độ bất định Ngẫu nhiên]
+Với $K > 1$, vì $\alpha_c < S$, tính đơn điệu tăng nghiêm ngặt của hàm digamma ($\psi'(x) > 0$ với mọi $x > 0$) đảm bảo rằng $\psi(S+1) > \psi(\alpha_c+1)$. Do đó, mỗi số hạng trong tổng đều dương, bảo đảm $u_a \ge 0$.
+\end{proposition}
+
+Trong thực tế, để bảo vệ chống lại các sai số nhỏ của dấu phẩy động, chúng tôi áp dụng $u_a \leftarrow \max(u_a, 0.0)$.
+
+% ============================================================================
+%  3. HÀM HAO TỔN TIÊU ĐIỂM CHỨNG CỨ
+% ============================================================================
+\section{Hàm Hao tổn Tiêu điểm Chứng cứ}\label{sec:efl}
+
+Mặc dù thuật ngữ Hàm Hao tổn Tiêu điểm Chứng cứ (Evidential Focal Loss - EFL) đã được đề cập trong một số nghiên cứu trước đây (ví dụ: Zhou và cộng sự~\cite{zhou2023domain} cho bài toán phân loại ung thư tuyến tiền liệt), công thức của chúng tôi được thiết kế đặc thù để kết hợp giữa hao tổn entropy chéo chứng cứ dựa trên digamma (được đề xuất bởi Sensoy và cộng sự~\cite{sensoy2018evidential}), điều biến tiêu điểm động (theo Lin và cộng sự~\cite{lin2017focal}), và một thành phần chuẩn hóa phân kỳ Kullback-Leibler (KL). Thiết kế này được cấu trúc hóa đặc biệt để phối hợp nhịp nhàng với tính thưa động trong các lớp chiếu của MDEP dưới sự mất cân bằng nhóm nghiêm trọng:
+\begin{equation}\label{eq:efl}
+    L_{\text{EFL}}(\bm{e}, \bm{y}, t) = \frac{1}{N} \sum_{n=1}^N \omega_n \left[ \mathcal{F}(t) \cdot L_{\text{CE}}^{(n)} + \lambda_{\text{KL}} \cdot \mu(t) \cdot L_{\text{KL}}^{(n)} \right]
+\end{equation}
+trong đó $N$ là kích thước batch, $\bm{y}_n \in \{0, 1\}^K$ là nhãn mục tiêu one-hot, $\omega_n$ là trọng số mẫu, $\lambda_{\text{KL}} = 0.1$ là hệ số điều hòa, và $\mu(t)$ là hệ số tăng dần của bộ chuẩn hóa.
+
+\subsection{Hao tổn Entropy Chéo Chứng cứ Phân tích}\label{subsec:ce_term}
+
+Thành phần entropy chéo được thiết lập dưới dạng kỳ vọng của entropy chéo đa biến trên phân phối Dirichlet dự đoán:
+\begin{align}
+    L_{\text{CE}} &= \E_{\bm{p} \sim \Dir(\bm{\alpha})} \left[ -\sum_{c=1}^K y_c \ln p_c \right] = -\sum_{c=1}^K y_c \, \E_{\bm{p}}[\ln p_c] \nonumber \\
+    &= -\sum_{c=1}^K y_c \left[ \psi(\alpha_c) - \psi(S) \right] = \sum_{c=1}^K y_c \left[ \psi(S) - \psi(\alpha_c) \right] \label{eq:ce_digamma}
+\end{align}
+Công thức này phạt các chứng cứ thấp cho lớp chính xác bằng cách sử dụng hàm digamma.
+
+\subsection{Điều biến Tiêu điểm với Lịch trình $\gamma$ Động}\label{subsec:focal}
+
+Để ngăn chặn lớp đa số Dominant áp đảo các cập nhật gradient, chúng tôi điều biến hao tổn bằng một hệ số tiêu điểm:
+\begin{equation}\label{eq:focal_weight}
+    \mathcal{F}(t) = \left(1 - \hat{p}_{\text{target}}\right)^{\gamma(t)}
+\end{equation}
+ở đây $\hat{p}_{\text{target}} = \sum_c y_c \hat{p}_c$ biểu thị xác suất kỳ vọng của lớp đúng (được tách khỏi đồ thị gradient để đảm bảo tính ổn định huấn luyện). Số mũ tiêu điểm $\gamma(t)$ được lập lịch qua một hàm tuyến tính từng khúc:
+\begin{equation}\label{eq:gamma_schedule}
+    \gamma(t) = \begin{cases}
+        0.0 & \text{nếu } t < t_{\text{warmup}} \\[4pt]
+        \gamma_{\text{base}} \cdot \dfrac{t - t_{\text{warmup}}}{3} & \text{nếu } t_{\text{warmup}} \le t < t_{\text{warmup}} + 3 \\[4pt]
+        \gamma_{\text{base}} & \text{nếu } t \ge t_{\text{warmup}} + 3
+    \end{cases}
+\end{equation}
+với $\gamma_{\text{base}} = 1.2$. Lịch trình này tắt điều biến tiêu điểm trong giai đoạn khởi động nhằm đảm bảo hội tụ ban đầu ổn định, sau đó tăng dần lên.
+
+\subsection{Trọng số Lớp Giảm nhẹ Tần suất Đảo nghịch}\label{subsec:class_weight}
+
+Để ổn định huấn luyện dưới sự mất cân bằng cực đoan (ví dụ: $N_1 \ll N_0$), chúng tôi áp dụng các trọng số lớp giảm nhẹ tần suất đảo nghịch:
+\begin{equation}\label{eq:class_weights}
+    \omega_c^{\text{raw}} = \sqrt{\frac{N_{\text{total}}}{N_c}}, \qquad \omega_c = \frac{\omega_c^{\text{raw}}}{\omega_0^{\text{raw}}}
+\end{equation}
+ở đây $N_c$ là số lượng mẫu của lớp $c$, và chuẩn hóa theo $\omega_0^{\text{raw}}$ (lớp đa số) đảm bảo $\omega_0 = 1.0$. Phép toán căn bậc hai làm giảm bớt tỷ số này, giúp tránh mất ổn định gradient vốn thường xảy ra nếu dùng trọng số đảo nghịch tuyến tính thuần túy. Trọng số hao tổn trên từng mẫu là $\omega_n = \sum_c y_{n,c} \omega_c$.
+
+\subsection{Chuẩn hóa KL để Triệt tiêu Chứng cứ Sai}\label{subsec:kl_reg}
+
+Để ngăn mô hình tạo ra các chứng cứ giả tạo cho các lớp sai, chúng tôi áp dụng một số hạng phân kỳ KL nhằm thu hẹp nồng độ của các lớp sai về giá trị tiên nghiệm $1.0$. Chúng tôi xây dựng vectơ nồng độ điều chỉnh $\tilde{\bm{\alpha}}$:
+\begin{equation}\label{eq:alpha_tilde}
+    \tilde{\alpha}_c = y_c + (1 - y_c) \cdot \alpha_c
+\end{equation}
+giúp bảo toàn nồng độ dự đoán của lớp đúng trong khi đặt nồng độ mục tiêu của tất cả các lớp khác về $1.0$. Bộ chuẩn hóa là phân kỳ KL giữa $\Dir(\tilde{\bm{\alpha}})$ và tiên nghiệm phẳng $\Dir(\bm{1})$:
+\begin{align}
+    L_{\text{KL}} &= \KL\!\left(\Dir(\tilde{\bm{\alpha}}) \,\|\, \Dir(\bm{1})\right) \nonumber \\
+    &= \ln \left( \frac{\Gamma\left(\sum_{c=1}^K \tilde{\alpha}_c\right)}{\Gamma(K) \prod_{c=1}^K \Gamma(\tilde{\alpha}_c)} \right) + \sum_{c=1}^K (\tilde{\alpha}_c - 1)\left[\psi(\tilde{\alpha}_c) - \psi\!\left(\sum_{c=1}^K \tilde{\alpha}_c\right)\right] \label{eq:kl_uniform}
+\end{align}
+Bộ chuẩn hóa được nhân với hệ số tăng dần tuyến tính $\mu(t) = \min(1.0, t / t_{\text{anneal}})$ với $t_{\text{anneal}} = 10$, cho phép mạng khám phá các biểu diễn trước khi phạt các chứng cứ sai.
+
+% ============================================================================
+%  4. TÍCH HỢP MẠNG XƯƠNG SỐNG SWIN TRANSFORMER
+% ============================================================================
+\section{Tích hợp Mạng xương sống Swin Transformer}\label{sec:swin}
+
+\subsection{Cấu trúc Phân cấp}\label{subsec:swin_arch}
+
+Mạng xương sống Swin Transformer~\cite{liu2021swin} xây dựng các biểu diễn đặc trưng phân cấp bằng cách xử lý ảnh đầu vào kích thước $H \times W \times 3$ qua bốn giai đoạn liên tiếp. Mô hình phân cấp bản đồ đặc trưng này tương ứng với mô thức giảm chiều không gian của các mạng tích chập, giúp việc trích xuất đặc trưng hình thái da liễu đa quy mô đạt hiệu quả cao.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.8cm and 1.8cm,
+    box/.style={draw, rounded corners, minimum height=1.0cm, minimum width=2.5cm, align=center, font=\small},
+    stagebox/.style={draw, rounded corners, minimum height=1.0cm, minimum width=3.2cm, align=center, font=\small, fill=blue!8},
+    arrow/.style={-{Stealth[length=6pt]}, thick},
+    label/.style={font=\scriptsize, text=gray}
+]
+    % Input
+    \node[box, fill=green!10] (input) {Ảnh Đầu Vào\\$224{\times}224{\times}3$};
+
+    % Patch Partition
+    \node[box, fill=orange!15, right=of input] (patch) {Phân đoạn Patch\\Conv2d($3,96,4,4$)\\(Đặc --- không MDEP)};
+
+    % Stage 1
+    \node[stagebox, right=of patch] (s1) {Giai đoạn 1\\$56{\times}56{\times}96$\\$2\times$ Khối Swin};
+
+    % Patch Merging 1
+    \node[box, fill=yellow!15, below=0.7cm of s1] (pm1) {Gộp Patch\\$\downarrow 2\times$};
+
+    % Stage 2
+    \node[stagebox, left=of pm1] (s2) {Giai đoạn 2\\$28{\times}28{\times}192$\\$2\times$ Khối Swin};
+
+    % Patch Merging 2
+    \node[box, fill=yellow!15, below=0.7cm of s2] (pm2) {Gộp Patch\\$\downarrow 2\times$};
+
+    % Stage 3
+    \node[stagebox, right=of pm2] (s3) {Giai đoạn 3\\$14{\times}14{\times}384$\\$6\times$ Khối Swin};
+
+    % Patch Merging 3
+    \node[box, fill=yellow!15, below=0.7cm of s3] (pm3) {Gộp Patch\\$\downarrow 2\times$};
+
+    % Stage 4
+    \node[stagebox, left=of pm3] (s4) {Giai đoạn 4\\$7{\times}7{\times}768$\\$2\times$ Khối Swin};
+
+    % Head
+    \node[box, fill=red!10, below=0.7cm of s4] (head) {AdaptiveAvgPool\\$\to$ Linear($768, K$)\\$\to$ Softplus (EDL)};
+
+    % Arrows
+    \draw[arrow] (input) -- (patch);
+    \draw[arrow] (patch) -- (s1);
+    \draw[arrow] (s1) -- (pm1);
+    \draw[arrow] (pm1) -- (s2);
+    \draw[arrow] (s2) -- (pm2);
+    \draw[arrow] (pm2) -- (s3);
+    \draw[arrow] (s3) -- (pm3);
+    \draw[arrow] (pm3) -- (s4);
+    \draw[arrow] (s4) -- (head);
+
+\end{tikzpicture}
+\caption{Sơ đồ hệ thống của xương sống Swin-T MDEP. Giai đoạn Phân đoạn Patch (màu cam) được duy trì là khối tích chập đặc để ngăn chặn mất mát đặc trưng không gian sớm. Tất cả các lớp tuyến tính bên trong cơ chế tự chú ý và MLP (khối màu xanh lam) được chuyển thành các phép chiếu \texttt{MDEPLinear} thưa. Đầu phân loại xuất chứng cứ Dirichlet qua kích hoạt Softplus.}
+\label{fig:swin_arch}
+\end{figure}
+
+\subsubsection{Phân đoạn Patch Đặc}
+
+Ảnh đầu vào được chiếu thành các patch không chồng chéo kích thước $4 \times 4$ bằng một stem tích chập 2D đặc:
+\begin{equation}\label{eq:patch_partition}
+    \bm{z}^{(0)} = \text{Conv2D}(3, C, \text{kernel\_size}=4, \text{stride}=4)(\bm{x})
+\end{equation}
+với $C=96$ cho Swin-T.
+
+\begin{remark}[Loại trừ Độ thưa ở Stem]
+Chúng tôi loại trừ rõ ràng lớp Phân đoạn Patch khỏi quá trình làm thưa MDEP. Vì lớp đầu vào chỉ chứa $3$ kênh màu, việc áp dụng mặt nạ thưa cấu trúc 2:4 sẽ vứt bỏ $50\%$ số điểm ảnh không gian ban đầu. Sự loại trừ này giúp bảo toàn các chi tiết hình thái cấp thấp. Do lớp này chỉ chứa $4{,}608$ tham số, việc giữ nó đặc không ảnh hưởng đến bộ nhớ GPU hay thời gian chạy.
+\end{remark}
+
+\subsubsection{Cơ chế Chú ý Cửa sổ Dịch chuyển}
+
+Trong mỗi khối Swin, các đặc trưng được chia thành các cửa sổ cục bộ kích thước $M \times M$ ($M=7$). Sự chú ý được tính toán cục bộ. Các khối xen kẽ dịch chuyển tọa độ cửa sổ đi một lượng $\lfloor M/2 \rfloor$ để cho phép truyền bá thông tin qua các ranh giới. Phương trình chú ý cửa sổ là:
+\begin{equation}\label{eq:attention}
+    \text{Attention}(\bm{Q}, \bm{K}, \bm{V}) = \text{softmax}\!\left(\frac{\bm{Q}\bm{K}^T}{\sqrt{d_k}} + \bm{B}\right)\bm{V}
+\end{equation}
+trong đó $\bm{Q}, \bm{K}, \bm{V}$ lần lượt là các ma trận query, key và value, $d_k$ là số chiều đầu chú ý, và $\bm{B}$ là độ chệch vị trí tương đối.
+
+Để áp dụng độ thưa cấu trúc, chúng tôi xác định tất cả các lớp chiếu tuyến tính bên trong các khối Swin:
+\begin{enumerate}
+    \item \texttt{attn.qkv}: Lớp chiếu query, key và value kết hợp $\bm{W}_{\text{qkv}} \in \R^{D \times 3D}$.
+    \item \texttt{attn.proj}: Lớp chiếu tuyến tính đầu ra sự chú ý $\bm{W}_{\text{proj}} \in \R^{D \times D}$.
+    \item \texttt{mlp.fc1}: Lớp mở rộng đầu tiên của khối MLP $\bm{W}_{\text{fc1}} \in \R^{D \times 4D}$.
+    \item \texttt{mlp.fc2}: Lớp thu hẹp thứ hai của khối MLP $\bm{W}_{\text{fc2}} \in \R^{4D \times D}$.
+    \item \texttt{reduction}: Lớp giảm tuyến tính trong các khối Gộp Patch $\bm{W}_{\text{reduce}} \in \R^{2D_{\text{in}} \times D_{\text{out}}}$.
+\end{enumerate}
+Các lớp này được thay thế bằng mô-đun \texttt{MDEPLinear} thưa.
+
+% ============================================================================
+%  5. CƠ CHẾ ĐỘ THƯA ĐỘNG ĐA TÁC TỬ MDEP
+% ============================================================================
+\section{Cơ chế Độ thưa Động Đa Tác tử MDEP}\label{sec:mdep}
+
+\subsection{Các Ràng buộc Độ thưa Cấu trúc NVIDIA 2:4}\label{subsec:24sparsity}
+
+Mẫu thưa cấu trúc 2:4 của NVIDIA bắt buộc rằng đối với mỗi bốn phần tử liên tiếp dọc theo chiều kênh đầu vào của một tensor trọng số, nhiều nhất hai phần tử có thể khác không.
+
+\begin{definition}[Mặt nạ Thưa 2:4]
+Gọi $\bm{W} \in \R^{d_{\text{out}} \times d_{\text{in}}}$ là một tensor trọng số. Gọi $\bm{M} \in \{0, 1\}^{d_{\text{out}} \times d_{\text{in}}}$ là mặt nạ nhị phân. Mặt nạ thỏa mãn độ thưa cấu trúc 2:4 nếu:
+\begin{equation}\label{eq:24_def}
+    \sum_{j=0}^{3} M_{i, 4k+j} = 2, \quad \forall i \in \{1, \dots, d_{\text{out}}\}, \quad \forall k \in \left\{0, \dots, \frac{d_{\text{in}}}{4} - 1\right\}
+\end{equation}
+\end{definition}
+
+Ràng buộc cấu trúc này được thực thi gốc trên lõi Tensor GPU Ampere và Hopper, mang lại tốc độ xử lý nhanh hơn tới $2\times$ nhờ bỏ qua các phép tính trên giá trị không.
+
+\subsection{Điểm số Ẩn Liên tục}\label{subsec:scores}
+
+Để tối ưu hóa mặt nạ rời rạc $\bm{M}$, chúng tôi giới thiệu một tensor tham số liên tục $\bm{S} \in \R^{d_{\text{out}} \times d_{\text{in}}}$ đại diện cho điểm số ẩn của mỗi liên kết. Tại thời điểm khởi tạo, các điểm số này được đặt bằng độ lớn tuyệt đối của các trọng số đã được huấn luyện trước:
+\begin{equation}\label{eq:score_init}
+    S_{ij}^{(0)} = |W_{ij}|
+\end{equation}
+Mặt nạ nhị phân $\bm{M}$ được tính toán tại mỗi bước bằng cách chọn ra hai điểm số lớn nhất trong mỗi khối 4 phần tử:
+\begin{equation}\label{eq:mask_gen}
+    M_{i, 4k+j} = \begin{cases}
+        1.0 & \text{nếu } S_{i, 4k+j} \ge \tau_{i, k} \\
+        0.0 & \text{ngược lại}
+    \end{cases}
+\end{equation}
+ở đây $\tau_{i, k}$ là ngưỡng ngăn cách điểm số lớn thứ hai và thứ ba trong khối $(i, k)$. Trọng số hiệu dụng là $\bm{W}_{\text{eff}} = \bm{W} \odot \bm{M}$.
+
+\begin{remark}[Tối ưu hóa Bộ nhớ đệm Hình thái]
+Để tránh việc tính toán lại ngưỡng $\tau_{i, k}$ và mặt nạ nhị phân $\bm{M}$ tại mỗi bước truyền xuôi của quá trình huấn luyện (vốn gây ra chi phí sắp xếp và tính toán cục bộ rất lớn trên GPU), Swin-MDEP giới thiệu cơ chế bộ nhớ đệm hình thái (Morphological Cache). Ngưỡng $\bm{\tau}$ được đăng ký dưới dạng một bộ đệm không liên tục (\texttt{persistent=False} buffer) trong các lớp thưa. Cả mặt nạ $\bm{M}$ và ngưỡng $\bm{\tau}$ được tính toán và cập nhật một lần duy nhất tại đầu mỗi epoch huấn luyện, sau đó được lưu trữ trong bộ nhớ đệm và tái sử dụng trực tiếp cho tất cả các batch còn lại của epoch đó. Cải tiến này không chỉ tăng tốc độ huấn luyện lên đáng kể mà còn đóng vai trò như một bộ điều hòa cấu trúc (structural regularizer) hiệu quả. Trong các tập dữ liệu da liễu có tính không đồng nhất cao, việc cập nhật mặt nạ theo từng mini-batch rất dễ bị ảnh hưởng bởi nhiễu tần số cao của từng batch, dẫn đến các dao động cấu trúc liên kết không ổn định. Việc cố định mặt nạ trong suốt một epoch giúp tích lũy và ổn định hóa xu hướng biểu diễn cấu trúc của mạng.
+\end{remark}
+
+\subsection{Bộ ước lượng Thông suốt Làm mịn Cục bộ}\label{subsec:ste}
+
+Để cho phép lan truyền ngược các gradient tới điểm số ẩn $\bm{S}$, chúng tôi sử dụng một Bộ ước lượng Thông suốt (STE) Làm mịn Cục bộ.
+
+\subsubsection{Truyền xuôi}
+Truyền xuôi sử dụng mặt nạ nhị phân cứng $\bm{M}$. Ngưỡng cục bộ cụ thể cho từng khối $\tau_{i, k}$ được tính như sau:
+\begin{equation}\label{eq:tau}
+    \tau_{i, k} = \frac{1}{2} \left( S_{i, k}^{(2)} + S_{i, k}^{(3)} \right)
+\end{equation}
+trong đó $S_{i, k}^{(2)}$ và $S_{i, k}^{(3)}$ lần lượt là các giá trị điểm số lớn thứ hai và thứ ba trong khối.
+
+\subsubsection{Truyền ngược}
+Truyền ngược xấp xỉ gradient của hàm bước bằng đạo hàm của một hàm sigmoid tập trung tại ngưỡng $\tau_{i, k}$:
+\begin{equation}\label{eq:ste_backward}
+    \frac{\partial M_{ij}}{\partial S_{ij}} \approx \frac{1}{gamma} \sigma\left(\frac{S_{ij} - \tau_{ij}}{\gamma}\right) \left[ 1 - \sigma\left(\frac{S_{ij} - \tau_{ij}}{\gamma}\right) \right]
+\end{equation}
+ở đây $\sigma(x) = (1 + \exp(-x))^{-1}$ là hàm sigmoid logistic, và $\gamma$ là nhiệt độ. Lưu ý rằng Phương trình~\ref{eq:ste_backward} tương ứng với mật độ xác suất của phân phối logistic. Vì vậy, các gradient chủ yếu chảy đến các điểm số nằm gần ranh giới cắt tỉa. Nhiệt độ $\gamma(t)$ được giảm dần qua lịch trình cosin:
+\begin{equation}\label{eq:gamma_anneal}
+    \gamma(t) = \gamma_{\text{final}} + \frac{1}{2}(\gamma_{\text{initial}} - \gamma_{\text{final}})\left[1 + \cos\!\left(\pi \cdot \frac{t - t_{\text{warmup}}}{T - t_{\text{warmup}}}\right)\right], \quad t \ge t_{\text{warmup}}
+\end{equation}
+từ $\gamma_{\text{initial}} = 5.0$ xuống $\gamma_{\text{final}} = 0.15$.
+
+\begin{remark}[Động lực học STE và Tránh đóng băng Kết nối]
+Chúng tôi lưu ý rằng các điểm số ẩn liên tục $S_{ij}$ không được cập nhật trực tiếp bằng các gradient lan truyền ngược thông qua bộ ước lượng STE. Ngược lại, chúng được điều chỉnh trực tiếp bởi hệ tác tử sinh học thông qua sai biệt giữa tín hiệu phát triển và cắt tỉa ($\Delta S_{ij} = G_{ij} - C_{ij}$). Do đó, việc đạo hàm của hàm sigmoid trong STE triệt tiêu về $0$ tại các vị trí điểm số cách xa ngưỡng $\tau$ không hề làm đóng băng quá trình mọc lại của các liên kết đã bị cắt tỉa. Sự mọc lại của các liên kết thưa được dẫn dắt bởi cơ chế chống kết tinh cấu trúc (Phương trình~\ref{eq:anti_crystal}), tiêm nhiễu ngẫu nhiên được điều hòa bởi độ bất định nhận thức để liên tục thăm dò các liên kết mới.
+\end{remark}
+
+\subsection{Trích xuất Gradient Phân bổ}\label{subsec:amortised}
+
+Để tránh chi phí tính toán gradient độ bất định trên từng vòng lặp, chúng tôi thực hiện một lượt truyền ngược phân bổ trên mini-batch đầu tiên của mỗi epoch.
+
+\subsubsection{Gradient Cắt tỉa Vi bào đệm}
+
+Tác tử Vi bào đệm yêu cầu gradient của độ bất định ngẫu nhiên đối với các trọng số. Chúng tôi tính lượt truyền ngược từ trung bình độ bất định ngẫu nhiên $\bar{u}_a = \frac{1}{N}\sum_n u_{a,n}$ để thu được:
+\begin{equation}\label{eq:grad_ua}
+    \bm{g}_{u_a}^{(l)} = \frac{\partial \bar{u}_a}{\partial \bm{W}_{\text{eff}}^{(l)}}
+\end{equation}
+giá trị này được lưu trữ để cập nhật điểm số cho tác tử trong epoch đó.
+
+\begin{remark}[Tính ổn định toán học của Gradient Vi bào đệm]
+Đạo hàm của độ bất định ngẫu nhiên $u_a$ theo trọng số yêu cầu tính toán hàm trigamma $\psi_1(x)$. Vì MDEP áp dụng một độ lệch tiên nghiệm tiên quyết là $+1.0$ (dẫn đến $\alpha_c = e_c + 1.0 \ge 1.0$), các đối số truyền vào hàm trigamma trong đạo hàm của $u_a$ được giới hạn chặt chẽ bởi $\alpha_c + 1 \ge 2.0$ và $S + 1 \ge K + 1 \ge 3.0$. Do hàm trigamma $\psi_1(x)$ nghịch biến với mọi $x > 0$, ta luôn có $\psi_1(\alpha_c+1) \le \psi_1(2) \approx 0.645$ và $\psi_1(S+1) \le \psi_1(3) \approx 0.395$. Độ lệch Dirichlet phẳng này đảm bảo các thành phần trigamma không bao giờ bị bùng nổ, giúp ổn định triệt để gradient của Vi bào đệm.
+\end{remark}
+
+\subsubsection{Gradient Phát triển Tế bào sao}
+
+Tác tử Tế bào sao yêu cầu gradient của độ bất định nhận thức đối với kích hoạt lớp. Chúng tôi tính lượt truyền ngược từ trung bình độ bất định nhận thức $\bar{u}_e = \frac{1}{N}\sum_n u_{e,n}$ để thu được:
+\begin{equation}\label{eq:grad_ue}
+    \bm{g}_{\text{act}}^{(l)} = \frac{\partial \bar{u}_e}{\partial \bm{a}^{(l)}}
+\end{equation}
+
+\begin{remark}[Độ nhạy không gian của Tế bào sao]
+Mặc dù đạo hàm theo lớp $\partial u_e / \partial \alpha_c = -K/S^2$ là một đại lượng vô hướng toàn cục, gradient lan truyền ngược đến các nút kích hoạt nội bộ $a_i^{(l)}$ là $\frac{\partial u_e}{\partial a_i^{(l)}} = -\frac{K}{S^2} \sum_c \frac{\partial \alpha_c}{\partial a_i^{(l)}}$. Thành phần tổng này chính là tổng các phần tử Jacobian, thay đổi phi cấu trúc và không đồng nhất theo không gian và kênh dựa trên trọng số và kích hoạt của mạng. Vì vậy, tác tử Tế bào sao không hề bị mù không gian mà nhắm mục tiêu chính xác vào các liên kết có ảnh hưởng lớn nhất đến tổng lượng bằng chứng.
+\end{remark}
+
+\subsubsection{Gom cụm Kích hoạt Tổng quát}
+
+Vì kích hoạt bên trong các khối Swin khác nhau về kích thước (ví dụ: tensor 3D dạng $B \times T \times D$ hoặc tensor 4D dạng $B \times H \times W \times D$), chúng tôi định nghĩa một phép toán gom cụm tổng quát để trích xuất một vectơ phản hồi 1D $\bm{u}_e^{(\text{node})} \in \R^{D}$ tương ứng với các kênh ẩn:
+\begin{equation}\label{eq:node_pool}
+    u_{e,i}^{(\text{node})} = \frac{1}{\prod_{d=0}^{\text{ndim}-2} N_d} \sum_{k_0, \dots, k_{\text{ndim}-2}} \left|\left(\bm{g}_{\text{act}}^{(l)}\right)_{k_0, \dots, k_{\text{ndim}-2}, i}\right|
+\end{equation}
+ở đây $N_d$ là kích thước chiều thứ $d$. Dưới dạng vectơ hóa, nó được tính như sau:
+\begin{equation}\label{eq:node_pool_code}
+    \bm{u}_e^{(\text{node})} = \text{mean}\!\left(\left|\bm{g}_{\text{act}}^{(l)}\right|,\; \text{dim} = [0, 1, \dots, \text{ndim}-2]\right)
+\end{equation}
+giúp thống nhất đầu vào của Tế bào sao trên tất cả các lớp của transformer.
+
+\subsection{Động lực học Tương tác Tác tử}\label{subsec:agents}
+
+Các điểm số cấu trúc liên kết ẩn được cập nhật động thông qua các hành động đối nghịch của hai tác tử Vi bào đệm và Tế bào sao. Chúng tôi lưu ý rằng trong quá trình phát triển hệ thần kinh sinh học, sự tương tác giữa các tế bào thần kinh đệm và các khớp thần kinh (synapse) là vô cùng phức tạp; ví dụ, các tế bào sao (astrocyte) không chỉ thúc đẩy quá trình hình thành khớp thần kinh (synaptogenesis) mà còn tham gia trực tiếp vào việc thực bào và cắt tỉa các khớp thần kinh thông qua các con đường tín hiệu MEGF10 và MERTK~\cite{chung2013astrocytes}, đồng thời tế bào vi bào đệm (microglia) cũng có các tương tác chéo (crosstalk) phức tạp với tế bào sao~\cite{vainchtein2018astrocyte}. Trong khuôn khổ MDEP, chúng tôi áp dụng một cơ chế trừu tượng hóa tính toán đơn giản hóa, trong đó các tác tử Vi bào đệm và Tế bào sao được phân công các vai trò riêng biệt và trực giao (tương ứng là cắt tỉa và phát triển) nhằm cho phép kiểm soát độc lập mật độ kết nối mạng và khám phá không gian tìm kiếm cấu trúc liên kết một cách hiệu quả.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.2cm and 2.5cm,
+    box/.style={draw, rounded corners=4pt, minimum height=0.9cm, minimum width=2.8cm, align=center, font=\small},
+    signal/.style={-{Stealth[length=5pt]}, thick},
+    dashedsignal/.style={-{Stealth[length=5pt]}, thick, dashed},
+]
+    % Central score
+    \node[box, fill=purple!12, minimum width=3.5cm] (score) {Điểm số Ẩn $\bm{S}^{(l)}$};
+
+    % Microglia
+    \node[box, fill=red!12, above left=1.5cm and 1.5cm of score] (micro) {\textbf{Vi bào đệm}\\Tác tử Cắt tỉa};
+
+    % Astrocyte
+    \node[box, fill=green!12, above right=1.5cm and 1.5cm of score] (astro) {\textbf{Tế bào sao}\\Tác tử Phát triển};
+
+    % Inputs to Microglia
+    \node[box, fill=red!5, above=0.8cm of micro, minimum width=2.5cm] (c1) {$c_1 = |w_{ij} \cdot \nabla_w L_{\text{EFL}}|$};
+    \node[box, fill=red!5, left=0.3cm of c1, minimum width=2.5cm] (c2) {$c_2 = |w_{ij} \cdot \nabla_w u_a|$};
+
+    % Inputs to Astrocyte
+    \node[box, fill=green!5, above=0.8cm of astro, minimum width=2.5cm] (g1) {$g_1 = u_{e,i}^{(\text{node})}$};
+    \node[box, fill=green!5, right=0.3cm of g1, minimum width=2.5cm] (g2) {$g_2 = |\nabla_w L_{\text{EFL}}|$};
+
+    % Mask
+    \node[box, fill=yellow!15, below=1.2cm of score] (mask) {$\bm{M} = \text{Top2of4}(\bm{S})$};
+
+    % Weight
+    \node[box, fill=blue!8, below=0.8cm of mask] (weff) {$\bm{W}_{\text{eff}} = \bm{W} \odot \bm{M}$};
+
+    % Arrows
+    \draw[signal, red!70!black] (c1) -- (micro);
+    \draw[signal, red!70!black] (c2) -- (micro);
+    \draw[signal, green!70!black] (g1) -- (astro);
+    \draw[signal, green!70!black] (g2) -- (astro);
+
+    \draw[signal, red!70!black] (micro) -- node[left, font=\scriptsize] {$-C_{ij}$} (score);
+    \draw[signal, green!70!black] (astro) -- node[right, font=\scriptsize] {$+G_{ij}$} (score);
+
+    \draw[signal] (score) -- (mask);
+    \draw[signal] (mask) -- (weff);
+
+\end{tikzpicture}
+\caption{Kiến trúc hệ thống của cơ chế thưa động đa tác tử. Tác tử \textbf{Vi bào đệm} (đỏ) tạo ra tín hiệu cắt tỉa $C_{ij}$ để triệt tiêu các trọng số khuếch đại nhiễu. Tác tử \textbf{Tế bào sao} (xanh lá) tạo ra tín hiệu phát triển $G_{ij}$ để tái kích hoạt các kết nối trong các vùng có độ bất định nhận thức cao. Lực kết hợp $\Delta S_{ij} = G_{ij} - C_{ij}$ dẫn dắt các cập nhật điểm số ẩn.}
+\label{fig:agents}
+\end{figure}
+
+\subsubsection{Tín hiệu Cắt tỉa Vi bào đệm ($C_{ij}$)}
+
+Tác tử Vi bào đệm xác định các liên kết đóng góp ít cho tác vụ phân loại hoặc làm khuếch đại nhiễu dữ liệu. Chúng tôi định nghĩa các thành phần:
+\begin{align}
+    c_1^{(ij)} &= \left|w_{ij} \cdot \frac{\partial L_{\text{EFL}}}{\partial w_{ij}}\right| \quad \text{(Tầm quan trọng dự đoán tác vụ)} \\
+    c_2^{(ij)} &= \left|w_{ij} \cdot \frac{\partial u_a}{\partial w_{ij}}\right| \quad \text{(Đóng góp vào nhiễu ngẫu nhiên)}
+\end{align}
+Các thành phần này được chuẩn hóa bằng thang đo min-max về đoạn $[0, 1]$ và kết hợp lại:
+\begin{equation\label{eq:Cij}
+    C_{ij} = \text{Norm}\left(c_1^{(ij)}\right) + \beta \cdot \text{Norm}\left(c_2^{(ij)}\right)
+\end{equation}
+ở đây $\beta = 1.0$. Các liên kết có giá trị $C_{ij}$ cao sẽ là mục tiêu bị cắt tỉa.
+
+\subsubsection{Tín hiệu Phát triển Tế bào sao ($G_{ij}$)}
+
+Tác tử Tế bào sao thúc đẩy tăng trưởng trọng số trong các vùng mạng thiếu biểu diễn đặc trưng. Các thành phần được định nghĩa là:
+\begin{align}
+    g_1^{(ij)} &= \text{Expand}\left(\bm{u}_e^{(\text{node})}\right) \quad \text{(Phản hồi bất định nhận thức cấp nút)} \\
+    g_2^{(ij)} &= \left|\frac{\partial L_{\text{EFL}}}{\partial w_{ij}}\right| \quad \text{(Gradient học tập cục bộ)}
+\end{align}
+ở đây $g_1^{(ij)}$ được mở rộng dọc theo chiều kênh để khớp với hình dạng của tensor trọng số. Tín hiệu phát triển là tích của các thành phần đã chuẩn hóa:
+\begin{equation\label{eq:Gij}
+    G_{ij} = \text{Norm}\left(g_1^{(ij)}\right) \cdot \text{Norm}\left(g_2^{(ij)}\right)
+\end{equation}
+Công thức nhân này giới hạn sự phát triển chỉ cho các trọng số thể hiện cả độ bất định nhận thức cao và gradient học tập đang hoạt động.
+
+\paragraph{Tiêm Nhiễu Chống Đông kết Cấu trúc}
+
+Nếu tín hiệu phát triển trở nên đồng nhất ($\max_{ij} G_{ij} \le 10^{-8}$), chúng tôi tiêm nhiễu ngẫu nhiên để ngăn cấu trúc liên kết bị đóng băng:
+\begin{equation\label{eq:anti_crystal}
+    G_{ij} \leftarrow G_{ij} + \max\!\left(0.0,\; \bm{\epsilon}_{ij} \odot \text{Norm}(g_1^{(ij)})\right)
+\end{equation}
+với $\bm{\epsilon}_{ij} \sim \mathcal{N}(0, 0.0316^2)$.
+
+\subsubsection{Cập nhật Điểm số Cấu trúc liên kết}
+
+Cập nhật điểm số thuần được thúc đẩy bởi sự khác biệt giữa tín hiệu phát triển và cắt tỉa:
+\begin{equation\label{eq:delta_S}
+    \Delta S_{ij} = G_{ij} - C_{ij}
+\end{equation}
+Chúng tôi cập nhật điểm số ẩn bằng động lượng để lọc nhiễu của mini-batch:
+\begin{align}
+    V_{ij}^{(t)} &= \beta_m V_{ij}^{(t-1)} + (1 - \beta_m) \Delta S_{ij} \label{eq:momentum} \\
+    S_{ij}^{(t)} &= S_{ij}^{(t-1)} + \eta V_{ij}^{(t)} \label{eq:score_update}
+\end{align}
+ở đây $\beta_m = 0.95$ và $\eta = 0.02$. Để ngăn chặn bão hòa tham số, chúng tôi áp dụng căn giữa về không và giới hạn biên:
+\begin{align}
+    S_{ij}^{(t)} &\leftarrow S_{ij}^{(t)} - \text{Mean}(\bm{S}^{(t)}) \label{eq:zero_center} \\
+    S_{ij}^{(t)} &\leftarrow \text{Clamp}(S_{ij}^{(t)}, -5.0, 5.0) \label{eq:clamp}
+\end{align}
+
+Chúng tôi theo dõi tính ổn định của cấu trúc liên kết qua tần suất lật mặt nạ:
+\begin{equation\label{eq:flop_rate}
+    \text{FlopRate}^{(t)} = \frac{1}{\sum_l |\bm{M}^{(l)}|} \sum_{l,i,j} \mathbb{1}\!\left[M_{ij}^{(t)} \ne M_{ij}^{(t-1)}\right]
+\end{equation}
+Tần suất lật giảm dần cho thấy mạng đang hội tụ về một cấu trúc liên kết thưa ổn định.
+
+% ============================================================================
+%  6. CHƯNG CẤT TRI THỨC
+% ============================================================================
+\section{Chưng cất Tri thức Phân kỳ KL Dirichlet}\label{sec:distillation}
+
+Để ổn định mạng học sinh Swin-T thưa dưới sự mất cân bằng nghiêm trọng, chúng tôi chưng cất bối cảnh bất định từ một mô hình giáo viên ResNet-18 Evidential đặc và hội tụ.
+
+\subsection{Phân kỳ KL Dirichlet Dạng phân tích}\label{subsec:dir_kl}
+
+Gọi $\bm{\alpha}_S = \bm{e}_S + \bm{1}$ và $\bm{\alpha}_T = \bm{e}_T + \bm{1}$ lần lượt là vectơ nồng độ của học sinh và giáo viên. Phân kỳ KL giữa hai phân phối Dirichlet được tính bằng:
+\begin{align}
+    \KL(\Dir(\bm{\alpha}_S) \| \Dir(\bm{\alpha}_T)) &= \ln \Gamma(S_S) - \ln \Gamma(S_T) - \sum_{c=1}^K \left[\ln \Gamma(\alpha_{S,c}) - \ln \Gamma(\alpha_{T,c})\right] \nonumber \\
+    &\quad + \sum_{c=1}^K (\alpha_{S,c} - \alpha_{T,c})\left[\psi(\alpha_{S,c}) - \psi(S_S)\right] \label{eq:dir_kl_full}
+\end{align}
+trong đó $S_S = \sum_c \alpha_{S,c}$ và $S_T = \sum_c \alpha_{T,c}$. Hao tổn chưng cất là:
+\begin{equation\label{eq:distill_loss}
+    L_{\text{distill}} = \frac{1}{N}\sum_{n=1}^N \KL\!\left(\Dir(\bm{\alpha}_{S}^{(n)}) \,\|\, \Dir(\bm{\alpha}_{T}^{(n)})\right)
+\end{equation}
+
+\subsection{Lịch trình Suy giảm Cosin}\label{subsec:cosine_decay}
+
+Để cho phép học sinh tận dụng độ hiệu chuẩn của giáo viên trong giai đoạn đầu huấn luyện, chúng tôi áp dụng lịch trình suy giảm cosin cho trọng số chưng cất $\alpha_d(t)$:
+\begin{equation\label{eq:alpha_d}
+    \alpha_d(t) = \begin{cases}
+        \alpha_{d,\text{init}} & \text{nếu } t < t_{\text{warmup}} \\[6pt]
+        \alpha_{d,\text{final}} + \dfrac{\alpha_{d,\text{init}} - \alpha_{d,\text{final}}}{2}\left[1 + \cos\!\left(\pi \cdot \dfrac{t - t_{\text{warmup}}}{T - t_{\text{warmup}}}\right)\right] & \text{nếu } t \ge t_{\text{warmup}}
+    \end{cases}
+\end{equation}
+ở đây $\alpha_{d,\text{init}} = 0.5$ và $\alpha_{d,\text{final}} = 0.05$. Tổng hao tổn là:
+\begin{equation\label{eq:total_loss}
+    \boxed{L_{\text{total}} = L_{\text{EFL}}(\bm{e}_S, \bm{y}, t) + \alpha_d(t) \cdot L_{\text{distill}}}
+\end{equation}
+
+Trong epoch đầu tiên ($t < 1$), chúng tôi ổn định huấn luyện bằng hệ số tỷ lệ hao tổn tuyến tính theo từng batch:
+\begin{equation}
+    \lambda_{\text{scale}}(t, b) = 4.0 - 3.0 \cdot \frac{t \cdot B + b}{B}
+\end{equation}
+với $b$ là chỉ số mini-batch, và $B$ là số lượng batch mỗi epoch.
+
+% ============================================================================
+%  7. CHI TIẾT TỐI ƯU HÓA HỆ THỐNG
+% ============================================================================
+\section{Chi tiết Tối ưu hóa Hệ thống}\label{sec:system}
+
+Các điểm số ẩn liên tục $\bm{S}^{(l)}$ được cập nhật độc quyền bởi các quy tắc tác tử MDEP, và bị loại trừ khỏi các nhóm tham số của bộ tối ưu hóa:
+\begin{equation}
+    \Theta_{\text{train}} = \{p \in \text{model.parameters()} : \text{"scores"} \notin \text{name}(p)\}
+\end{equation}
+Chúng tôi tối ưu hóa $\Theta_{\text{train}}$ bằng AdamW với tốc độ học cơ bản là $2 \times 10^{-5}$, giảm trọng số $0.01$, và một giai đoạn khởi động tuyến tính từ $10^{-6}$ trong epoch đầu tiên. Chúng tôi áp dụng cắt cụm gradient ở ngưỡng $1.0$.
+
+Để đảm bảo độ ổn định số học, tất cả các phép chiếu của mạng xương sống và hao tổn chưng cất được tính bằng FP16 sử dụng \texttt{torch.cuda.amp.autocast}. Các thành phần Hao tổn Tiêu điểm Chứng cứ, vốn chứa các hàm digamma và gamma, được ép kiểu sang FP32 để tránh hiện tượng dưới hạn số học.
+
+% ============================================================================
+%  8. THÔNG SỐ THUẬT TOÁN
+% ============================================================================
+\section{Thông số Thuật toán}\label{sec:algorithm}
+
+\begin{algorithm}[H]
+\caption{Vòng lặp Huấn luyện và Tối ưu hóa Swin-MDEP}\label{alg:swin_mdep}
+\begin{algorithmic}[1]
+\Require Mô hình học sinh $f_S$ đã khởi tạo, mô hình giáo viên $f_T$, bộ nạp dữ liệu $\mathcal{D}$, số epoch $T$, số epoch khởi động $t_w$.
+\Ensure Mô hình học sinh thưa đã tối ưu hóa $f_S$.
+\State Khởi tạo điểm số ẩn: $\bm{S}^{(l)} \leftarrow |\bm{W}^{(l)}|$ cho các lớp MDEP $l$.
+\For{epoch $t = 0$ to $T - 1$}
+    \State $\text{is\_warmup} \leftarrow (t < t_w)$
+    \State Cập nhật các siêu tham số: $\gamma \leftarrow \text{StepGamma}(t)$, $\alpha_d \leftarrow \text{StepAlphaD}(t)$
+    \State Thiết lập trạng thái mô-đun: $\texttt{warmup} \leftarrow \text{is\_warmup}$, $\texttt{gamma} \leftarrow \gamma$
+    \If{$\neg\text{is\_warmup}$ \textbf{và} batch đầu tiên}
+        \State Tính các gradient lưu trữ: $\bm{g}_{u_a}^{(l)}, \bm{u}_e^{(\text{node}, l)} \leftarrow \text{AmortizedBackward}(f_S)$
+    \EndIf
+    \For{mini-batch $(\bm{x}, \bm{y}) \in \mathcal{D}$}
+        \State Tính dự đoán học sinh (FP16): $\bm{e}_S \leftarrow f_S(\bm{x})$
+        \State Tính dự đoán giáo viên (đóng băng): $\bm{e}_T \leftarrow f_T(\bm{x})$
+        \State Tính toán hao tổn: $L_{\text{EFL}} \leftarrow \text{EFL}(\bm{e}_S, \bm{y}, t)$ và $L_{\text{distill}} \leftarrow \KL(\Dir(\bm{e}_S+1) \| \Dir(\bm{e}_T+1))$
+        \State $L_{\text{total}} \leftarrow L_{\text{EFL}} + \alpha_d L_{\text{distill}}$
+        \State Lượt truyền ngược: $\text{unscale}(\nabla L_{\text{total}})$
+        \State Lưu trữ gradient: $\bm{g}_{L,w}^{(l)} \leftarrow \nabla_{\bm{W}_{\text{eff}}^{(l)}} L$
+        \State Bước tối ưu hóa (ngoại trừ điểm số $\bm{S}$)
+        \If{$\neg\text{is\_warmup}$ \textbf{và} batch đầu tiên}
+            \State Chạy cập nhật điểm số: $\text{UpdateScoresAgents}(f_S)$ \Comment{Xem Thuật toán~\ref{alg:agents}}
+        \EndIf
+    \EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{Cập nhật Điểm số Đa tác tử (\textsc{UpdateScoresAgents})}\label{alg:agents}
+\begin{algorithmic}[1]
+\Require Mô hình $f_S$ chứa các gradient đã lưu trữ $\bm{g}_{L,w}^{(l)}$, $\bm{g}_{u_a}^{(l)}$, và $\bm{u}_e^{(\text{node}, l)}$.
+\For{mỗi lớp MDEP $l$}
+    \State Tính mặt nạ trước đó: $\bm{M}_{\text{old}} \leftarrow \text{Top2of4}(\bm{S}^{(l)})$
+    \State \textit{// Bước Cắt tỉa Vi bào đệm}
+    \State $c_1 \leftarrow |W^{(l)} \odot \bm{g}_{L,w}^{(l)}|$, $c_2 \leftarrow |W^{(l)} \odot \bm{g}_{u_a}^{(l)}|$
+    \State $C_{ij} \leftarrow \text{Norm}(c_1) + \beta \text{Norm}(c_2)$
+    \State \textit{// Bước Phát triển Tế bào sao}
+    \State $g_1 \leftarrow \text{Expand}(\bm{u}_e^{(\text{node}, l)})$, $g_2 \leftarrow |\bm{g}_{L,w}^{(l)}|$
+    \State $G_{ij} \leftarrow \text{Norm}(g_1) \odot \text{Norm}(g_2)$
+    \State \textbf{nếu} $\max(G_{ij}) \le 10^{-8}$: $G_{ij} \leftarrow G_{ij} + \max(0, \bm{\epsilon}_{ij} \odot \text{Norm}(g_1))$
+    \State \textit{// Điều chỉnh Điểm số}
+    \State $\Delta S \leftarrow G_{ij} - C_{ij}$
+    \State $V^{(l)} \leftarrow 0.95 V^{(l)} + 0.05 \Delta S$
+    \State $S^{(l)} \leftarrow S^{(l)} + 0.02 V^{(l)}$
+    \State Căn giữa và giới hạn biên: $S^{(l)} \leftarrow \text{Clamp}(S^{(l)} - \text{Mean}(S^{(l)}), -5.0, 5.0)$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+% ============================================================================
+%  9. PHƯƠNG PHÁP LUẬN
+% ============================================================================
+\section{Phương pháp Luận}\label{sec:methodology}
+
+Phần này trình bày thiết kế nghiên cứu tổng thể, mô tả tập dữ liệu, quy trình tiền xử lý, luồng xây dựng mô hình, giao thức huấn luyện và khung đánh giá của Swin-MDEP. Mục tiêu là cung cấp một bức tranh toàn cảnh về cách các thành phần toán học đã trình bày ở các phần trước được kết nối thành một luồng thực nghiệm thống nhất.
+
+\subsection{Thiết kế Nghiên cứu}\label{subsec:research_design}
+
+Nghiên cứu này được thiết kế như một thực nghiệm định lượng trong lĩnh vực học sâu, nhằm kiểm định ba giả thuyết đồng thời:
+\begin{enumerate}[label=(H\arabic*)]
+    \item Việc tích hợp cơ chế thưa động đa tác tử MDEP vào mạng xương sống Swin Transformer có thể duy trì hoặc cải thiện hiệu suất phân loại so với mô hình đặc, đồng thời giảm $50\%$ chi phí tính toán tại thời điểm suy luận nhờ ràng buộc thưa cấu trúc NVIDIA 2:4.
+    \item Biểu diễn chứng cứ Dirichlet (EDL) cho phép mô hình phân tách và định lượng chính xác các thành phần bất định nhận thức và ngẫu nhiên, cải thiện độ hiệu chuẩn so với các bộ phân loại softmax truyền thống.
+    \item Chưng cất tri thức phân kỳ KL Dirichlet từ mô hình giáo viên ResNet MDEP đặc sang mô hình học sinh Swin-T thưa có thể ngăn chặn hiện tượng sụp đổ biểu diễn trong giai đoạn chuyển đổi từ huấn luyện đặc sang huấn luyện thưa.
+\end{enumerate}
+
+Để kiểm soát biến nhiễu và đảm bảo tính quy kết nhân quả, chúng tôi thiết kế thực nghiệm theo nguyên tắc \emph{giữ cố định kiến trúc nền}. Cụ thể, mạng xương sống Swin-T được khởi tạo từ trọng số ImageNet-1K tiền huấn luyện và giữ nguyên cấu trúc phân cấp bốn giai đoạn. MDEP đóng vai trò như một \emph{lớp điều khiển cấu trúc} phủ lên trên, biến mạng Swin-T tĩnh thành một đồ thị tính toán thưa động mà không thay đổi bản chất kiến trúc. Nhờ vậy, mọi cải thiện hiệu suất có thể được quy về cơ chế cắt tỉa/phát triển hướng chứng cứ của hệ tác tử Microglia--Astrocyte.
+
+\subsection{Tập dữ liệu: ISIC 2024}\label{subsec:dataset}
+
+Chúng tôi sử dụng tập dữ liệu chuẩn quốc tế \textbf{ISIC 2024 --- Skin Cancer Detection with 3D-TBP} làm benchmark lâm sàng chính. Tập dữ liệu này được cung cấp trong khuôn khổ Hợp tác Quốc tế về Hình ảnh Da liễu (International Skin Imaging Collaboration) và đại diện cho một bước tiến quan trọng trong phát hiện sớm ung thư da nhờ kỹ thuật chụp ảnh toàn thân ba chiều (3D Total Body Photography -- 3D-TBP).
+
+\paragraph{Đặc điểm phân phối.}
+Thách thức toán học nổi bật nhất của ISIC 2024 nằm ở sự mất cân bằng lớp cực đoan: các ca ác tính (chủ yếu là melanoma) chỉ chiếm xấp xỉ $0.15\%$ tổng số mẫu, trong khi nhóm tổn thương lành tính chiếm hơn $99.85\%$. Tỷ lệ mất cân bằng lên tới khoảng $670{:}1$ tạo ra một ``bẫy tối ưu'' điển hình: mô hình có thể đạt độ chính xác bề mặt cao bằng cách thiên vị mạnh về lớp đa số, nhưng lại bỏ sót hoàn toàn các ca bệnh hiếm có ý nghĩa lâm sàng cao ($\text{Sensitivity} \to 0$).
+
+\paragraph{Lý do lựa chọn.}
+ISIC 2024 được lựa chọn vì ba lý do: (i) sự mất cân bằng cực đoan tạo điều kiện kiểm định nghiêm ngặt cho cả độ nhạy lớp thiểu số lẫn độ hiệu chuẩn xác suất; (ii) nhiễu thị giác từ biến thiên ánh sáng, tóc che lấp, và đặc điểm da cá nhân tạo ra thành phần bất định ngẫu nhiên phong phú để đánh giá khả năng phân tách $u_e$/$u_a$ của EDL; và (iii) ranh giới hình thái giữa tổn thương lành tính và ác tính thường chồng lấn, đòi hỏi mô hình phải ``biết khi nào mình không biết'' thay vì đưa ra dự đoán quá tự tin.
+
+\subsection{Quy trình Tiền xử lý Dữ liệu}\label{subsec:preprocessing}
+
+\paragraph{Phân chia dữ liệu.}
+Siêu dữ liệu lâm sàng được phân tích từ tệp \texttt{train-metadata.csv}. Tập dữ liệu được chia thành tập huấn luyện ($80\%$) và tập kiểm thử ($20\%$) bằng phương pháp \emph{phân chia phân tầng} (stratified split) với hạt giống cố định (\texttt{random\_state=42}), đảm bảo tỷ lệ siêu hiếm của lớp ác tính được duy trì nhất quán ở cả hai tập.
+
+\paragraph{Tăng cường dữ liệu.}
+Đầu vào được thay đổi kích thước về độ phân giải $224 \times 224$ pixel. Với tập huấn luyện, pipeline áp dụng lật ảnh ngẫu nhiên theo cả chiều ngang và chiều dọc nhằm đa dạng hóa miền dữ liệu và cải thiện khả năng mô hình hóa thành phần bất định ngẫu nhiên $u_a$. Với tập kiểm thử, chỉ thực hiện thay đổi kích thước và chuẩn hóa. Toàn bộ ảnh được chuẩn hóa theo thống kê ImageNet: $\mu = [0.485, 0.456, 0.406]$, $\sigma = [0.229, 0.224, 0.225]$.
+
+\paragraph{Tính toán trọng số lớp.}
+Để ổn định huấn luyện dưới sự mất cân bằng cực đoan, trọng số lớp giảm chấn căn bậc hai được tính toán từ phân phối nhãn thực tế của tập huấn luyện theo Phương trình~\ref{eq:class_weights}. Trọng số của lớp đa số (lành tính) được ghim ở mức $1.0$, trong khi lớp thiểu số (ác tính) nhận trọng số xấp xỉ $\sqrt{670} \approx 25.9$, cung cấp lực đẩy gradient đáng kể cho lớp hiếm mà không tạo biến động cực đoan cho hàm hao tổn.
+
+\subsection{Quy trình Xây dựng Mô hình}\label{subsec:model_construction}
+
+Quy trình xây dựng mô hình Swin-MDEP bao gồm bốn bước tuần tự:
+
+\subsubsection{Bước 1: Khởi tạo Mô hình Giáo viên}
+
+Mô hình giáo viên là một mạng ResNet-18 Evidential (không phải phiên bản ResNet-18 chuẩn/vanilla, mà đã được cấu trúc hóa với đầu phân loại EDL và các lớp \texttt{MDEPConv2d}/\texttt{MDEPLinear} nhưng không kích hoạt thưa hóa) đã được huấn luyện hội tụ trên cùng tập dữ liệu ISIC 2024 với cấu hình đặc. Lớp phân loại cuối của ResNet-18 được thay thế bằng một đầu EDL:
+\begin{equation}
+    \text{Head}_{\text{teacher}} = \text{Linear}(512, K) \to \text{Softplus}(\cdot)
+\end{equation}
+Các lớp tích chập và tuyến tính bên trong được chuyển đổi sang cấu trúc \texttt{MDEPConv2d} và \texttt{MDEPLinear} để tương thích với định dạng \texttt{state\_dict}. 
+
+Để đảm bảo tính tự động hóa và sự ổn định khi triển khai huấn luyện trên các môi trường đám mây (Kaggle) hoặc môi trường đa thư mục cục bộ, hệ thống được trang bị thuật toán giải quyết đường dẫn động (Dynamic Path Resolution) cho tệp checkpoint của giáo viên (\texttt{model\_checkpoint.pth}). Hệ thống sẽ quét qua danh sách các đường dẫn ứng viên bao gồm thư mục hiện hành, thư mục song song của mô hình xương sống ResNet-50 (\texttt{../RESNET50 backbone/}), và các đường dẫn đầu vào của nền tảng Kaggle (\texttt{/kaggle/input/...}). Trọng số giáo viên sẽ được nạp ngay khi tìm thấy tệp đầu tiên tồn tại, từ đó kích hoạt chưng cất tri thức mà không cần can thiệp thủ công. Sau khi nạp trọng số từ checkpoint, mô hình giáo viên được đóng băng hoàn toàn ($\texttt{requires\_grad} = \text{False}$) và đặt ở chế độ đánh giá.
+
+\subsubsection{Bước 2: Khởi tạo Mô hình Học sinh Swin-T}
+
+Mô hình học sinh Swin-T được khởi tạo từ trọng số tiền huấn luyện ImageNet-1K (\texttt{Swin\_T\_Weights.IMAGENET1K\_V1}). Đầu phân loại gốc được thay thế bằng đầu EDL:
+\begin{equation}
+    \text{Head}_{\text{student}} = \text{Linear}(768, K) \to \text{Softplus}(\cdot)
+\end{equation}
+Trọng số tuyến tính của đầu EDL được khởi tạo bằng phân phối chuẩn rất hẹp $\mathcal{N}(0, 0.001^2)$ và bias được đặt bằng $0$, nhằm đảm bảo lượng chứng cứ ban đầu gần $\bm{0}$ --- tương ứng với phân phối Dirichlet đồng nhất $\Dir(\bm{1})$.
+
+\subsubsection{Bước 3: Chuyển đổi Lớp Chiếu sang MDEP}
+
+Tất cả các lớp \texttt{nn.Linear} bên trong module \texttt{features} của Swin-T được đệ quy thay thế bằng \texttt{MDEPLinear}. Quá trình chuyển đổi bao gồm:
+\begin{enumerate}
+    \item Sao chép trọng số $\bm{W}$ từ lớp gốc sang lớp MDEP mới.
+    \item Khởi tạo điểm số ẩn: $\bm{S}^{(0)} \leftarrow |\bm{W}|$ (Phương trình~\ref{eq:score_init}).
+    \item Khởi tạo bộ đệm động lượng: $\bm{V}^{(0)} \leftarrow \bm{0}$.
+    \item Khởi tạo mặt nạ: $\bm{M}^{(0)} \leftarrow \bm{1}$ (đặc trong giai đoạn khởi động).
+\end{enumerate}
+
+\begin{remark}[Bảo toàn lớp Phân đoạn Patch]
+Lớp tích chập đầu vào (Patch Partition, $\text{Conv2D}(3, 96, 4, 4)$) được \emph{loại trừ rõ ràng} khỏi quá trình chuyển đổi MDEP (xem Mục~\ref{subsec:swin_arch}). Tương tự, đầu phân loại EDL cũng được giữ đặc.
+\end{remark}
+
+\subsubsection{Bước 4: Cấu hình Bộ tối ưu hóa}
+
+Các điểm số ẩn $\bm{S}^{(l)}$ được lọc khỏi danh sách tham số của bộ tối ưu hóa:
+\begin{equation}
+    \Theta_{\text{train}} = \{p \in \text{model.parameters()} : \text{"scores"} \notin \text{name}(p)\}
+\end{equation}
+Bộ tối ưu hóa AdamW được cấu hình với tốc độ học cơ bản $\eta_{\text{base}} = 2 \times 10^{-5}$, giảm trọng số $\lambda_{\text{wd}} = 0.01$, và cắt cụm gradient ở ngưỡng $1.0$. Việc loại trừ $\bm{S}$ khỏi AdamW là bắt buộc để tránh hiện tượng ``optimizer hijacking'': weight decay sẽ nén trí nhớ cấu trúc về gần $0$ và phá hủy các xung lực có chủ đích của hệ tác tử.
+
+\subsection{Giao thức Huấn luyện Hai Pha}\label{subsec:training_protocol}
+
+Quy trình huấn luyện được chia thành hai pha rõ rệt trong tổng $T = 20$ epoch:
+
+\subsubsection{Pha 1: Khởi động Đặc ($t < t_w = 5$ epoch)}
+
+Trong pha khởi động, tất cả các mô-đun MDEP được đặt ở chế độ $\texttt{warmup} = \text{True}$:
+\begin{itemize}
+    \item Mặt nạ $\bm{M}^{(l)}$ bị khóa ở toàn $\bm{1}$ --- mạng hoạt động như mô hình đặc hoàn toàn.
+    \item Điều biến tiêu điểm bị tắt: $\gamma(t) = 0$ (Phương trình~\ref{eq:gamma_schedule}).
+    \item Trọng số chưng cất $\alpha_d(t)$ được giữ ở mức cao $\alpha_{d,\text{init}} = 0.5$ để truyền bối cảnh bất định từ giáo viên.
+    \item Gradient phân bổ cho tác tử được tính nhưng không kích hoạt cập nhật điểm số.
+\end{itemize}
+Mục tiêu của pha này là tạo nền hiệu năng đủ mạnh trước khi cấu trúc bị cắt tỉa, tránh hiện tượng ``Pruning Shock'' --- sự sụp đổ hiệu suất đột ngột khi chuyển sang huấn luyện thưa trên các biểu diễn chưa ổn định.
+
+\paragraph{Khởi động tốc độ học.}
+Trong epoch đầu tiên ($t = 0$), tốc độ học được nội suy tuyến tính theo từng batch:
+\begin{equation}
+    \eta(t=0, b) = 10^{-6} + \frac{b}{B}\left(\eta_{\text{base}} - 10^{-6}\right)
+\end{equation}
+trong đó $b$ là chỉ số batch và $B$ là tổng số batch trong epoch. Đồng thời, hao tổn được nhân với hệ số tỷ lệ suy giảm tuyến tính $\lambda_{\text{scale}}(0, b) = 4.0 - 3.0 \cdot b/B$ để ổn định các cập nhật ban đầu khi thống kê moment của AdamW chưa ổn định.
+
+\subsubsection{Pha 2: Thưa Động MDEP ($t \geq t_w = 5$ epoch)}
+
+Sau khi kết thúc giai đoạn khởi động, hệ thống kích hoạt đầy đủ cơ chế thưa động:
+\begin{itemize}
+    \item Mặt nạ $\bm{M}^{(l)}$ được tính toán tại mỗi bước từ điểm số ẩn $\bm{S}^{(l)}$ qua toán tử Top-2-of-4.
+    \item Trọng số hiệu dụng $\bm{W}_{\text{eff}}^{(l)} = \bm{W}^{(l)} \odot \bm{M}^{(l)}$ tuân thủ ràng buộc thưa cấu trúc 2:4.
+    \item Tại batch đầu tiên của mỗi epoch, gradient phân bổ $\bm{g}_{u_a}^{(l)}$ và $\bm{u}_e^{(\text{node}, l)}$ được tính toán (Thuật toán~\ref{alg:swin_mdep}, dòng 7--8).
+    \item Cập nhật điểm số cấu trúc $\bm{S}^{(l)}$ được thực hiện bởi hệ tác tử Microglia--Astrocyte (Thuật toán~\ref{alg:agents}).
+    \item Nhiệt độ STE $\gamma(t)$ được giảm dần theo lịch cosin từ $5.0$ xuống $0.15$ (Phương trình~\ref{eq:gamma_anneal}).
+    \item Trọng số chưng cất $\alpha_d(t)$ suy giảm cosin từ $0.5$ xuống $0.05$ (Phương trình~\ref{eq:alpha_d}), cho phép học sinh dần chuyên biệt hóa trên nhãn lâm sàng thực tế.
+    \item Điều biến tiêu điểm $\gamma_{\text{focal}}(t)$ tăng dần lên $\gamma_{\text{base}} = 1.2$ để tập trung vào các mẫu khó.
+\end{itemize}
+
+\paragraph{Độ ổn định số học.}
+Tất cả các phép chiếu mạng xương sống và hao tổn chưng cất được tính bằng FP16 thông qua \texttt{torch.cuda.amp.autocast}. Các thành phần Hao tổn Tiêu điểm Chứng cứ chứa các hàm digamma và gamma được ép kiểu sang FP32 để tránh hiện tượng dưới hạn số học. Bộ co giãn gradient (\texttt{GradScaler}) quản lý việc chuyển đổi giữa hai miền số học.
+
+\subsection{Luồng Xử lý Tổng thể}\label{subsec:pipeline_summary}
+
+Hình~\ref{fig:pipeline} tóm tắt luồng xử lý đầu-cuối của Swin-MDEP dưới dạng sơ đồ chuỗi.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.6cm,
+    box/.style={draw, rounded corners=3pt, minimum height=0.7cm, minimum width=8cm, align=center, font=\small},
+    arrow/.style={-{Stealth[length=5pt]}, thick},
+]
+    \node[box, fill=green!10] (d1) {\textbf{Dữ liệu:} ISIC 2024 $\to$ Chia phân tầng 80/20 $\to$ Augmentation + Chuẩn hóa ImageNet};
+    \node[box, fill=orange!10, below=of d1] (d2) {\textbf{Giáo viên:} ResNet-18 Evidential đặc (đóng băng) $\to$ Xuất chứng cứ $\bm{e}_T$};
+    \node[box, fill=blue!8, below=of d2] (d3) {\textbf{Học sinh:} Swin-T + trọng số ImageNet-1K $\to$ Thay đầu EDL $\to$ Chuyển đổi MDEP};
+    \node[box, fill=yellow!12, below=of d3] (d4) {\textbf{Pha 1 --- Khởi động Đặc ($t < 5$):} Mặt nạ $\bm{1}$ $|$ Chưng cất Dirichlet cao $|$ $\gamma_{\text{focal}} = 0$};
+    \node[box, fill=red!8, below=of d4] (d5) {\textbf{Pha 2 --- Thưa Động ($t \geq 5$):} Mặt nạ 2:4 $|$ Microglia cắt $|$ Astrocyte mọc $|$ STE làm mịn};
+    \node[box, fill=purple!8, below=of d5] (d6) {\textbf{Đánh giá:} Bal.Acc, pAUROC, Brier, ECE, AURC, Sụp đổ biểu diễn, Xác minh 2:4};
+
+    \draw[arrow] (d1) -- (d2);
+    \draw[arrow] (d2) -- (d3);
+    \draw[arrow] (d3) -- (d4);
+    \draw[arrow] (d4) -- (d5);
+    \draw[arrow] (d5) -- (d6);
+\end{tikzpicture}
+\caption{Luồng xử lý đầu-cuối của Swin-MDEP: từ chuẩn bị dữ liệu, xây dựng mô hình giáo viên--học sinh, huấn luyện hai pha, đến đánh giá đa tiêu chí.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Khung Đánh giá Đa Tiêu chí}\label{subsec:eval_framework}
+
+Hiệu quả của Swin-MDEP không được kết luận từ một chỉ số đơn lẻ mà được kiểm định đồng thời qua ba nhóm thước đo:
+
+\paragraph{Nhóm 1 --- Hiệu suất Phân loại.}
+Bao gồm Độ chính xác Cân bằng (Balanced Accuracy), Macro F1-Score, AUROC từng phần (pAUROC tại $\text{FPR} \leq 0.2$), PR-AUC, Sensitivity và Specificity. Ngưỡng phân loại lâm sàng tối ưu $\tau^*$ được dò tìm trong miền $[0.01, 0.99]$ bằng tìm kiếm lưới để tối đa hóa Balanced Accuracy, thay vì gán cứng $\tau = 0.5$.
+
+\paragraph{Nhóm 2 --- Độ Tin cậy và Hiệu chuẩn.}
+Bao gồm Chỉ số Brier, Sai số Hiệu chuẩn Kỳ vọng toàn cục (ECE), ECE lớp thiểu số (Minority-ECE --- tính riêng trên các ca ác tính), và Diện tích dưới Đường cong Rủi ro--Độ bao phủ (AURC). Biểu đồ Độ tin cậy (Reliability Diagram) và phân bố bất định nhận thức trên các dự đoán đúng/sai được trực quan hóa.
+
+\paragraph{Nhóm 3 --- Sức khỏe Cấu trúc.}
+Bao gồm tỷ lệ đảo mặt nạ (FlopRate), phương sai điểm số $\text{Std}(\bm{S}^{(l)})$, trôi vi bào đệm $\text{Mean}(\bm{S}^{(l)})$, chuẩn gradient $\|\bm{g}_{L,w}^{(l)}\|_2$, và xác minh tuân thủ cấu trúc 2:4 ở cấp khối (xem Mục~\ref{sec:diagnostics}).
+
+\paragraph{Bảng tóm tắt siêu tham số.}
+Bảng~\ref{tab:hyperparams} tổng hợp các siêu tham số chính của hệ thống.
+
+\begin{table}[H]
+\centering
+\caption{Tóm tắt các siêu tham số huấn luyện Swin-MDEP.}
+\label{tab:hyperparams}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Siêu tham số} & \textbf{Giá trị} & \textbf{Mô tả} \\
+\midrule
+\multicolumn{3}{l}{\emph{Kiến trúc}} \\
+Mạng xương sống học sinh & Swin-T & 28.3M tham số, 4 giai đoạn \\
+Mạng xương sống giáo viên & ResNet-18 & MDEP đặc, đóng băng \\
+Số lớp ($K$) & 2 & Lành tính / Ác tính \\
+Kích thước ảnh đầu vào & $224 \times 224$ & Chuẩn hóa ImageNet \\
+\midrule
+\multicolumn{3}{l}{\emph{Tối ưu hóa}} \\
+Bộ tối ưu & AdamW & $\beta_1 = 0.9$, $\beta_2 = 0.999$ \\
+Tốc độ học cơ bản & $2 \times 10^{-5}$ & Khởi động tuyến tính từ $10^{-6}$ \\
+Giảm trọng số & $0.01$ & Áp dụng cho $\Theta_{\text{train}}$ \\
+Cắt cụm gradient & $1.0$ & Chuẩn $L_2$ toàn cục \\
+Kích thước batch & $32$ & --- \\
+Tổng số epoch ($T$) & $20$ & --- \\
+Epoch khởi động ($t_w$) & $5$ & $25\%$ ngân sách \\
+\midrule
+\multicolumn{3}{l}{\emph{Hao tổn Tiêu điểm Chứng cứ}} \\
+$\gamma_{\text{base}}$ & $1.2$ & Số mũ tiêu điểm \\
+$\lambda_{\text{KL}}$ & $0.1$ & Hệ số chuẩn hóa KL \\
+$t_{\text{anneal}}$ (KL) & $10$ & Epoch tăng dần KL \\
+\midrule
+\multicolumn{3}{l}{\emph{MDEP}} \\
+$\gamma_{\text{initial}}$ (STE) & $5.0$ & Nhiệt độ STE ban đầu \\
+$\gamma_{\text{final}}$ (STE) & $0.15$ & Nhiệt độ STE cuối \\
+$\beta_m$ (EMA) & $0.95$ & Hệ số quán tính động lượng \\
+$\eta$ (Bước cập nhật $S$) & $0.02$ & Tốc độ học cấu trúc \\
+$\beta$ (Microglia) & $1.0$ & Trọng số thành phần $u_a$ \\
+$S_{\max}$ (Kẹp biên) & $5.0$ & Giới hạn biên điểm số \\
+\midrule
+\multicolumn{3}{l}{\emph{Chưng cất}} \\
+$\alpha_{d,\text{init}}$ & $0.5$ & Trọng số chưng cất ban đầu \\
+$\alpha_{d,\text{final}}$ & $0.05$ & Trọng số chưng cất cuối \\
+Lịch trình & Cosine decay & Sau $t_w$ epoch \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================================
+%  10. CÁC CHỈ SỐ ĐÁNH GIÁ LÂM SÀNG
+% ============================================================================
+\section{Các Chỉ số Đánh giá Lâm sàng}\label{sec:eval}
+
+Chúng tôi đánh giá hiệu suất mô hình bằng các chỉ số được thiết kế riêng cho các tác vụ lâm sàng mất cân bằng nghiêm trọng:
+\begin{itemize}
+    \item \textbf{Độ chính xác Cân bằng (Balanced Accuracy)}: $\frac{1}{2}(\text{Sensitivity} + \text{Specificity})$, giúp bảo vệ chống lại sự thiên vị lớp đa số.
+    \item \textbf{AUROC từng phần (pAUROC)}: Diện tích dưới đường cong ROC được tính toán đến tỷ lệ dương tính giả cực đại $20\%$ ($\text{FPR} \le 0.2$), tương ứng với cửa sổ hoạt động lâm sàng thực tế cho sàng lọc. Chúng tôi lưu ý rằng thước đo pAUROC này khác với thước đo chính thức trong cuộc thi ISIC 2024 (vốn tính phần diện tích trên vùng độ nhạy TPR lớn hơn $80\%$). Dưới ngưỡng mặc định $0.5$, độ nhạy của Swin-MDEP là $53.16\%$ (không thỏa mãn TPR $> 80\%$), nhưng khi tối ưu hóa ngưỡng lâm sàng về mức $0.2700$, độ nhạy đạt $81.81\%$, qua đó đáp ứng đầy đủ yêu cầu của thước đo chính thức và đảm bảo độ nhạy lâm sàng cần thiết.
+    \item \textbf{Chỉ số Brier (Brier Score)}: Quy tắc đánh giá phù hợp được tính bằng $\frac{1}{N}\sum_n (\hat{p}_{1}^{(n)} - y^{(n)})^2$, đo lường đồng thời độ chính xác và hiệu chuẩn.
+    \item \textbf{Sai số Hiệu chuẩn Kỳ vọng (ECE)}: Đo lường sự căn chỉnh giữa độ tự tin và độ chính xác thực tế trên $B$ phân nhóm:
+    \begin{equation\label{eq:ece}
+        \text{ECE} = \sum_{b=1}^B \frac{|B_b|}{N} \left|\text{acc}(B_b) - \text{conf}(B_b)\right|
+    \end{equation}
+    Chúng tôi theo dõi cả ECE trên toàn đoàn hệ và \textbf{ECE lớp thiểu số} (được tính riêng trên các trường hợp ác tính).
+    \item \textbf{Diện tích dưới Đường cong Rủi ro - Độ bao phủ (AURC)}: Đánh giá phân loại chọn lọc. Các mẫu được sắp xếp theo thứ tự tự tin giảm dần, và tỷ lệ lỗi (rủi ro) được vẽ theo tỷ lệ phần trăm mẫu được phân loại (độ bao phủ). AURC thấp hơn cho thấy các ước lượng độ tự tin của mô hình có khả năng dự đoán chính xác cao.
+\end{itemize}
+
+% ============================================================================
+%  11. HÀNG RÀO BẢO VỆ CHẨN ĐOÁN
+% ============================================================================
+\section{Hàng rào Bảo vệ Chẩn đoán}\label{sec:diagnostics}
+
+\subsection{Phát hiện Tiêu biến Gradient và Trôi Cấu trúc liên kết}
+
+Chúng tôi triển khai các bước kiểm tra chính thức để phát hiện và ngăn ngừa các bệnh lý huấn luyện trong các cấu trúc lớp thưa:
+\begin{itemize}
+    \item \textbf{Sụp đổ Phương sai Điểm số}: Nếu $\text{Std}(\bm{S}^{(l)}) \le 10^{-4}$, các điểm số đã hội tụ về một giá trị duy nhất, khiến các cập nhật của tác tử mất hiệu lực.
+    \item \textbf{Trôi Vi bào đệm}: Nếu $\text{Mean}(\bm{S}^{(l)}) \le -10.0$, tín hiệu cắt tỉa của Vi bào đệm đã áp đảo tín hiệu của Tế bào sao, đẩy tất cả điểm số ẩn về ranh giới dưới.
+    \item \textbf{Tiêu biến Sức sống Gradient}: Nếu $\|\bm{g}_{L,w}^{(l)}\|_2 \le 10^{-6}$, tín hiệu gradient đi qua lớp đã chết, ngăn cản việc tối ưu hóa cấu trúc liên kết.
+\end{itemize}
+Các chỉ báo chẩn đoán này được tự động đánh giá tại mỗi epoch.
+
+\subsection{Xác minh Độ thưa và Phần cứng}
+
+Tại pha đánh giá, công cụ kiểm tra độ thưa tham số chính xác $50\%$ của tất cả các khối chiếu MDEP được chỉ định. Việc xác minh cấu trúc đảm bảo rằng các khối trọng số tuân thủ nghiêm ngặt căn chỉnh cấu trúc Ampere 2:4:
+\begin{equation}
+    \text{PatternValid}^{(l)} = \prod_{i=1}^{d_{\text{out}}} \prod_{k=0}^{d_{\text{in}}/4 - 1} \mathbb{1}\left[\sum_{j=0}^3 M_{i, 4k+j}^{(l)} == 2\right]
+\end{equation}
+đây là điều kiện tiên quyết để thực thi trực tiếp trên các lõi Tensor phần cứng.
+
+% ============================================================================
+%  12. KẾT LUẬN
+% ============================================================================
+\section{Kết luận}\label{sec:conclusion}
+
+Swin-MDEP cung cấp một khung học sâu vững chắc về mặt toán học, được hiệu chuẩn tốt và hiệu quả về mặt phần cứng cho sàng lọc ung thư hắc tố lâm sàng. Bằng cách điều chỉnh cơ chế gom cụm gradient đa chiều của Tế bào sao cho phù hợp với các mạng xương sống tự chú ý cửa sổ dịch chuyển, sử dụng Smoothed STE cho việc tối ưu hóa độ thưa cấu trúc Ampere 2:4, và thực hiện lịch trình chưng cất Dirichlet suy giảm cosin, mô hình đạt được hiệu suất mạnh mẽ dưới sự mất cân bằng lớp nghiêm trọng. Các hàng rào bảo vệ chẩn đoán tích hợp và các chỉ số hiệu chuẩn lâm sàng cung cấp một bộ công cụ hoàn chỉnh để đảm bảo triển khai an toàn, được hiệu chuẩn tốt và hiệu quả trong các hệ thống hỗ trợ quyết định lâm sàng.
+
+% ============================================================================
+%  TÀI LIỆU THAM KHẢO
+% ============================================================================
+\begin{thebibliography}{10}
+
+\bibitem{sensoy2018evidential}
+M.~Sensoy, L.~Kaplan, and M.~Kandemir.
+\newblock Evidential deep learning to quantify classification uncertainty.
+\newblock In {\em Advances in Neural Information Processing Systems (NeurIPS)}, 2018.
+
+\bibitem{liu2021swin}
+Z.~Liu, Y.~Lin, Y.~Cao, H.~Hu, Y.~Wei, Z.~Zhang, S.~Lin, and B.~Guo.
+\newblock Swin Transformer: Hierarchical vision transformer using shifted windows.
+\newblock In {\em Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)}, 2021.
+
+\bibitem{evci2020rigging}
+U.~Evci, T.~Gale, J.~Menick, P.S.~Castro, and E.~Elsen.
+\newblock Rigging the lottery: Making all tickets winners.
+\newblock In {\em International Conference on Machine Learning (ICML)}, 2020.
+
+\bibitem{lin2017focal}
+T.~Lin, P.~Goyal, R.~Girshick, K.~He, and P.~Doll{\'a}r.
+\newblock Focal loss for dense object detection.
+\newblock In {\em Proceedings of the IEEE International Conference on Computer Vision (ICCV)}, 2017.
+
+\bibitem{hinton2015distilling}
+G.~Hinton, O.~Vinyals, and J.~Dean.
+\newblock Distilling the knowledge in a neural network.
+\newblock {\em arXiv preprint arXiv:1503.02531}, 2015.
+
+\bibitem{guo2017calibration}
+C.~Guo, G.~Pleiss, Y.~Sun, and K.Q.~Weinberger.
+\newblock On calibration of modern neural networks.
+\newblock In {\em International Conference on Machine Learning (ICML)}, 2017.
+
+\bibitem{hubara2021accelerated}
+I.~Hubara, B.~Chmiel, M.~Island, R.~Banner, J.~Naor, and D.~Soudry.
+\newblock Accelerated sparse neural training: A provable and efficient method to find N:M transposable masks.
+\newblock In {\em Advances in Neural Information Processing Systems (NeurIPS)}, 2021.
+
+\bibitem{dosovitskiy2020image}
+A.~Dosovitskiy, L.~Beyer, A.~Kolesnikov, D.~Weissenborn, X.~Zhai, T.~Unterthiner, M.~Dehghani, M.~Minderer, G.~Heigold, S.~Gelly, J.~Uszkoreit, and N.~Houlsby.
+\newblock An image is worth 16x16 words: Transformers for image recognition at scale.
+\newblock In {\em International Conference on Learning Representations (ICLR)}, 2021.
+
+\bibitem{joshi2019review}
+N.~Joshi, S.~Drenkow, and A.~Lozano.
+\newblock Review of dermoscopy image analysis techniques for skin lesion detection.
+\newblock {\em IEEE Transactions on Medical Imaging}, 38(7):1550--1564, 2019.
+
+\bibitem{naeini2015}
+M.P.~Naeini, G.~Cooper, and M.~Hauskrecht.
+\newblock Obtaining well calibrated probabilities using Bayesian binning into quantiles.
+\newblock In {\em AAAI Conference on Artificial Intelligence}, 2015.
+
+\bibitem{malinin2018predictive}
+A.~Malinin and M.~Gales.
+\newblock Predictive uncertainty estimation via prior networks.
+\newblock In {\em Advances in Neural Information Processing Systems (NeurIPS)}, 2018.
+
+\bibitem{chung2013astrocytes}
+W.S.~Chung, L.E.~Clarke, G.X.~Wang, B.K.~Stafford, A.~Sher, C.~Chakraborty, J.~Joung, L.C.~Foo, A.~Thompson, C.~Chen, S.J.~Smith, and B.A.~Barres.
+\newblock Astrocytes mediate synapse elimination through MEGF10 and MERTK pathways.
+\newblock {\em Nature}, 504(7480):394--400, 2013.
+
+\bibitem{vainchtein2018astrocyte}
+I.D.~Vainchtein, G.~Chin, F.S.~Cho, K.W.~Kelley, J.G.~Miller, E.C.~Chien, S.A.~Liddelow, P.T.~Nguyen, H.~Nakao-Inoue, L.C.~Dorman, O.~Akil, S.~Joshita, B.A.~Barres, J.T.~Paz, A.B.~Molofsky, and A.V.~Molofsky.
+\newblock Astrocyte-derived interleukin-33 promotes microglial synapse engulfment and neural circuit development.
+\newblock {\em Science}, 359(6381):1269--1273, 2018.
+
+\end{thebibliography}
+
+\end{document}

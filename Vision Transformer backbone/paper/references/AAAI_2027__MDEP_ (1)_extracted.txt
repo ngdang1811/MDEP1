@@ -1,0 +1,800 @@
+--- PAGE 1 ---
+GUDS-EDL: Glia-inspired Pruning and Regrowth for Uncertainty-aware
+Dynamic Sparse Evidential Deep Learning
+Strong AI Team
+Association for the Advancement of Artificial Intelligence
+2275 East Bayshore Road, Suite 160
+Palo Alto, California 94303
+Abstract
+MDEP (Microglial-Driven Evidential Pruning) is an
+advanced research framework that merges Evidential
+Deep Learning (EDL) and Dynamic Sparse Train-
+ing (DST) into a unified multi-agent optimization
+paradigm. Inspired by the biological pruning mecha-
+nisms of glial cells in the mammalian brain, MDEP
+models structural network optimization as a cooperative
+game between two glial agents: Microglia (responsible
+for targeted synaptic pruning) and Astrocytes (respon-
+sible for uncertainty-guided synaptic regrowth).
+Congratulations on having a paper selected for inclusion in
+an AAAI Press proceedings or technical report! This doc-
+ument details the requirements necessary to get your ac-
+cepted paper published using L ATEX. If you are using Mi-
+crosoft Word, instructions are provided in a different doc-
+ument. If you want to use some other formatting software,
+you must obtain permission from AAAI Press first.
+The instructions herein are provided as a general guide for
+experienced LATEX users who would like to use that software
+to format their paper for an AAAI Press publication or re-
+port. If you are not an experienced LATEX user, do not use it
+to format your paper. AAAI cannot provide you with support
+and the accompanying style files arenotguaranteed to work.
+If the results you obtain are not in accordance with the spec-
+ifications you received, you must correct your source file to
+achieve the correct result.
+These instructions are generic. Consequently, they do not
+include specific dates, page charges, and so forth. Please
+consult your specific written conference instructions for de-
+tails regarding your submission. Please review the entire
+document for specific instructions that might apply to your
+particular situation. All authors must comply with the fol-
+lowing:
+• You must use the latest AAAI Press LATEX macro.
+• Download the author kit.
+• Complete, sign, and return by the deadline the AAAI
+copyright form (proceedings authors) or distribution li-
+cense (technical report authors).
+Copyright © 2026, Association for the Advancement of Artificial
+Intelligence (www.aaai.org). All rights reserved.
+• Read and format your paper source and PDF according to
+the formatting instructions for authors.
+• Submit your electronic files and abstract using our elec-
+tronic submission formon time.
+• Submit your copyright form, and any required page or for-
+matting charges to AAAI Press so that they are received
+by the deadline.
+• Check every page of your paper before submitting it.
+Copyright
+All papers submitted for publication by AAAI Press must
+be accompanied by a valid signed copyright form or, in the
+case of technical reports, by a valid signed permission to
+distribute form. There are no exceptions to this requirement.
+You must send us the original version of this form. However,
+to meet the deadline, you may fax (1-650-321-4457) or scan
+and e-mail the form (pubforms14@aaai.org) to AAAI by the
+submission deadline, and then mail the original via postal
+mail to the AAAI office.If you fail to send in a signed
+copyright or permission form, your paper will not be
+published.You will find PDF versions of the AAAI copy-
+right and permission to distribute forms in the author kit.
+Formatting Requirements in Brief
+We need source and PDF files that can be used in a variety
+of ways and can be output on a variety of devices. AAAI im-
+poses some requirements on your source and PDF files that
+must be followed. Most of these requirements are based on
+our efforts to standardize conference manuscript properties
+and layout. These requirements are as follows, and all papers
+submitted to AAAI for publication must comply:
+• Your .tex file must compile in PDFL ATEX —no .ps or
+.eps figure files.
+• All fonts must be embedded in the PDF file —this in-
+cludes your figures.
+• Modifications to the style sheet (or your document) in an
+effort to avoid extra page charges are NOT allowed.
+• No type 3 fonts may be used (even in illustrations).
+• Your title must follow US capitalization rules.
+
+--- PAGE 2 ---
+• LATEX documents must use the Times or Nimbus font
+package (do not use Computer Modern for the text of your
+paper).
+• No LATEX 209 documents may be used or submitted.
+• Fonts that require non-English language support (CID
+and Identity-H) must be converted to outlines or removed
+from the document (even if they are in a graphics file em-
+bedded in the document).
+• Two-column format in AAAI style is required for all pa-
+pers.
+• The paper size for final submission must be US letter. No
+exceptions.
+• The source file must exactly match the PDF.
+• The document margins must be as specified in the format-
+ting instructions.
+• The number of pages and the file size must be as specified
+for your event.
+• No document may be password protected.
+• Neither the PDFs nor the source may contain any embed-
+ded links or bookmarks.
+• Your source and PDF must not have any page numbers,
+footers, or headers.
+• Your PDF must be compatible with Acrobat 5 or higher.
+• Your LATEX source file (excluding references) must con-
+sist of asinglefile (use of the “input" command is not
+allowed.
+• Your graphics must be sized appropriately outside of
+LATEX (do not use the “clip" command) .
+If you do not follow the above requirements, it is likely
+that we will be unable to publish your paper.
+What Files to Submit
+You must submit the following items to ensure that your pa-
+per is published:
+• A fully-compliant PDF file.
+• Your LATEX source file submitted as asingle.tex file (do
+not use the “input" command to include sections of your
+paper — every section must be in the single source file).
+The only exception is the bibliography, which you may
+include separately. Your source must compile on our sys-
+tem, which includes the standard LATEX support files.
+• All your graphics files.
+• The LATEX-generated files (e.g. .aux and .bib file, etc.) for
+your compiled source.
+• All the nonstandard style files (ones not commonly found
+in standard LATEX installations) used in your document
+(including, for example, old algorithm style files). If in
+doubt, include it.
+Your LATEX source will be reviewed and recompiled on
+our system (if it does not compile, you may incur late fees).
+Do not submit your source in multiple text files.Your sin-
+gle LATEX source file must include all your text, your bibli-
+ography (formatted using aaai.bst), and any custom macros.
+Accompanying this source file, you must also supply any
+nonstandard (or older) referenced style files and all your ref-
+erenced graphics files.
+Your files should work without any supporting files (other
+than the program itself) on any computer with a standard
+LATEX distribution. Place your PDF and source files in a
+single tar, zipped, gzipped, stuffed, or compressed archive.
+Name your source file with your last (family) name.
+Do not send files that are not actually used in the pa-
+per.We don’t want you to send us any files not needed for
+compiling your paper, including, for example, this instruc-
+tions file, unused graphics files, and so forth. A shell script
+(created by an AAAI member — it might not work without
+modification on your system) that might help you create the
+LATEX source package is included in the Author Kit.
+Using LATEX to Format Your Paper
+The latest version of the AAAI style file is available on
+AAAI’s website. Download this file and place it in a file
+named “aaai.sty" in the T EX search path. Placing it in the
+same directory as the paper should also work. You must
+download the latest version of the complete author kit so
+that you will have the latest instruction set.
+Document Preamble
+In the LATEX source for your paper, youmustplace the fol-
+lowing lines as shown in the example in this subsection. This
+command set-up is for three authors. Add or subtract author
+and address lines as necessary, and uncomment the portions
+that apply to you. In most instances, this is all you need to
+do to format your paper in the Times font. The helvet pack-
+age will cause Helvetica to be used for sans serif, and the
+courier package will cause Courier to be used for the type-
+writer font. These files are part of the PSNFSS2e package,
+which is freely available from many Internet sites (and is
+often part of a standard installation).
+Leave the setcounter for section number depth com-
+mented out and set at 0 unless you want to add section num-
+bers to your paper. If you do add section numbers, you must
+uncomment this line and change the number to 1 (for sec-
+tion numbers), or 2 (for section and subsection numbers).
+The style file will not work properly with numbering of sub-
+subsections, so do not use a number higher than 2.
+\documentclass[letterpaper]article
+%Required Packages
+\usepackage{aaai}
+\usepackage{times}
+\usepackage{helvet}
+\usepackage{courier}
+\setlength{\pdfpagewidth}{8.5in}
+\setlength{\pdfpageheight}{11in}
+%%%%%%%%%%
+%PDFINFO for PDFLATEX
+% Uncomment and complete the following for metadata
+(your paper must compile with PDFLATEX)
+
+--- PAGE 3 ---
+\pdfinfo{
+/Title (Input Your Paper Title Here)
+/Author (John Doe, Jane Doe)
+/Keywords (Input your paper’s keywords in this optional
+area)
+}
+%%%%%%%%%%
+%Section Numbers
+% Uncomment if you want to use section numbers
+% and change the 0 to a 1 or 2
+% \setcounter{secnumdepth}{0}
+%%%%%%%%%%
+%Title, Author, and Address Information
+\title{Title}
+\author{Author 1 \and Author 2\\
+Address line\\
+Address line\\
+\And
+Author 3\\
+Address line\\
+Address line}
+%%%%%%%%%%
+%Body of Paper Begins
+\begin{document}
+\maketitle
+...
+%%%%%%%%%%
+%References and End of Paper
+\bibliography{Bibliography-File}
+\bibliographystyle{aaai}
+\end{document}
+Inserting Document Metadata with LATEX
+PDF files contain document summary information that en-
+ables us to create an Acrobat index (pdx) file, and also al-
+lows search engines to locate and present your paper more
+accurately.Document Metadata for Author and Title are
+REQUIRED.
+If your paper includes illustrations that are not compatible
+with PDFTEX (such as .eps or .ps documents), you will need
+to convert them. The epstopdf package will usually work
+for eps files. You will need to convert your ps files to PDF
+however.
+Important:Do not includeanyL ATEX code or nonascii
+characters (including accented characters) in the metadata.
+The data in the metadata must be completely plain ascii. It
+may not include slashes, accents, linebreaks, unicode, or any
+LATEX commands. Type the title exactly as it appears on the
+paper (minus all formatting). Input the author names in the
+order in which they appear on the paper (minus all accents),
+separating each author by a comma. You may also include
+keywords in the Keywords field.
+Preparing Your Paper
+After the preamble above, you should prepare your paper as
+follows:
+\begin{document}
+\maketitle
+...
+\bibliography{Bibliography-File}
+\bibliographystyle{aaai}
+\end{document}
+Incompatible Packages
+The following packages are incompatible with aaai.sty
+and/or aaai.bst and must not be used (this list is not exhaus-
+tive — there are others as well):
+• hyperref
+• natbib
+• geometry
+• titlesec
+• layout
+• caption
+• titlesec
+• T1 fontenc package (install the CM super fonts package
+instead)
+Illegal Commands
+The following commands may not be used in your paper:
+• \input
+• \vspace (when used before or after a section or subsection)
+• \addtolength
+• \columnsep
+• \top margin (or text height or addsidemargin or even side
+margin)
+Paper Size, Margins, and Column Width
+Papers must be formatted to print in two-column format on
+8.5 x 11 inch US letter-sized paper. The margins must be
+exactly as follows:
+• Top margin: .75 inches
+• Left margin: .75 inches
+• Right margin: .75 inches
+• Bottom margin: 1.25 inches
+The default paper size in most installations of L ATEX is
+A4. However, because we require that your electronic pa-
+per be formatted in US letter size, you will need to alter the
+default for this paper to US letter size. Assuming you are
+using the 2e version of LATEX, you can do this by including
+the [letterpaper] option at the beginning of your file: \docu-
+mentclass[letterpaper]article.
+This command is usually sufficient to change the
+format. Sometimes, however, it may not work. Use
+PDFLATEX and include \setlength{\pdfpagewidth}{8.5in}
+\setlength{\pdfpageheight}{11in} in your preamble.
+Do not use the Geometry package to alter the page
+size.Use of this style file alters aaai.sty and will result in
+your paper being rejected.
+
+--- PAGE 4 ---
+Column Width and Margins.To ensure maximum read-
+ability, your paper must include two columns. Each column
+should be 3.3 inches wide (slightly more than 3.25 inches),
+with a .375 inch (.952 cm) gutter of white space between
+the two columns. The aaai.sty file will automatically create
+these columns for you.
+Overlength Papers
+If your paper is too long, turn on \frenchspacing, which
+will reduce the space after periods. Next, shrink the size of
+your graphics. Use \centering instead of \begin{center} in
+your figure environment. If these two methods don’t work,
+you may minimally use the following. For floats (tables and
+figures), you may minimally reduce \floatsep, \textfloatsep,
+\abovecaptionskip, and \belowcaptionskip. For mathemat-
+ical environments, you may minimally reduce \abovedis-
+playskip, \belowdisplayskip, and \arraycolsep. You may
+also alter the size of your bibliography by inserting \font-
+size{9.5pt}{10.5pt} \selectfont right before the bibliogra-
+phy.
+Commands that alter page layout are forbidden. These
+include \columnsep, \topmargin, \topskip, \textheight, \tex-
+twidth, \oddsidemargin, and \evensizemargin (this list is not
+exhaustive). If you alter page layout, you will be required to
+pay the page feeplusa reformatting fee. Other commands
+that are questionable and may cause your paper to be re-
+jected include \parindent, and \parskip. Commands that alter
+the space between sections are also questionable. The title
+sec package is not allowed. Regardless of the above, if your
+paper is obviously “squeezed" it is not going to to be ac-
+cepted. Before using every trick you know to make your pa-
+per a certain length, try reducing the size of your graphics
+or cutting text instead or (if allowed) paying the extra page
+charge. It will be cheaper in the long run.
+Figures
+Your paper must compile in PDFL ATEX. Consequently, all
+your figures must be .jpg, .png, or .pdf. You may not use
+the .gif (the resolution is too low), .ps, or .eps file format for
+your figures.
+When you include your figures, you must crop themout-
+sideof L ATEX. The command \includegraphics*[clip=true,
+viewport 0 0 10 10]... might result in a PDF that looks great,
+but the image isnot really cropped.The full image can
+reappear when page numbers are applied or color space is
+standardized.
+Type Font and Size
+Your paper must be formatted in Times Roman or Nimbus.
+We will not accept papers formatted using Computer Mod-
+ern or Palatino or some other font as the text or heading type-
+face. Sans serif, when used, should be Courier. Use Symbol
+or Lucida or Computer Modern formathematics only.
+Do not use type 3 fonts for any portion of your paper,
+including graphics. Type 3 bitmapped fonts are designed
+for fixed resolution printers. Most print at 300 dpi even if
+the printer resolution is 1200 dpi or higher. They also often
+cause high resolution imagesetter devices and our PDF in-
+dexing software to crash. Consequently, AAAI will not ac-
+cept electronic files containing obsolete type 3 fonts. Files
+containing those fonts (even in graphics) will be rejected.
+Fortunately, there are effective workarounds that will pre-
+vent your file from embedding type 3 bitmapped fonts. The
+easiest workaround is to use the required times, helvet, and
+courier packages with LATEX2e. (Note that papers formatted
+in this way will still use Computer Modern for the mathe-
+matics. To make the math look good, you’ll either have to
+use Symbol or Lucida, or you will need to install type 1
+Computer Modern fonts — for more on these fonts, see the
+section “Obtaining Type 1 Computer Modern.")
+If you are unsure if your paper contains type 3 fonts, view
+the PDF in Acrobat Reader. The Properties/Fonts window
+will display the font name, font type, and encoding proper-
+ties of all the fonts in the document. If you are unsure if your
+graphics contain type 3 fonts (and they are PostScript or en-
+capsulated PostScript documents), create PDF versions of
+them, and consult the properties window in Acrobat Reader.
+The default size for your type should be ten-point with
+twelve-point leading (line spacing). Start all pages (except
+the first) directly under the top margin. (See the next sec-
+tion for instructions on formatting the title page.) Indent ten
+points when beginning a new paragraph, unless the para-
+graph begins directly below a heading or subheading.
+Obtaining Type 1 Computer Modern for L ATEX.If
+you use Computer Modern for the mathematics in your
+paper (you cannot use it for the text) you may need
+to download type 1 Computer fonts. They are available
+without charge from the American Mathematical Society:
+http://www.ams.org/tex/type1-fonts.html.
+Title and Authors
+Your title must appear in mixed case (nouns, pronouns, and
+verbs are capitalized) near the top of the first page, cen-
+tered over both columns in sixteen-point bold type (twenty-
+four point leading). This style is called “mixed case." Au-
+thor’s names should appear below the title of the paper, cen-
+tered in twelve-point type (with fifteen point leading), along
+with affiliation(s) and complete address(es) (including elec-
+tronic mail address if available) in nine-point roman type
+(the twelve point leading). (If the title is long, or you have
+many authors, you may reduce the specified point sizes by
+up to two points.) You should begin the two-column format
+when you come to the abstract.
+Formatting Author InformationAuthor information can
+be set in a number of different styles, depending on the num-
+ber of authors and the number of affiliations you need to dis-
+play. For several authors from the same institution, use \and:
+\author{Author 1 \and ... \and Authorn\\
+Address line \\ ... \\ Address line}
+If the names do not fit well on one line use:
+\author{Author 1}\\
+{\bf Author 2}\\ ... \\ {\bf Authorn}\\
+Address line \\ ... \\ Address line}
+
+--- PAGE 5 ---
+For authors from different institutions, use \And:
+\author{Author 1\\ Address line \\ ... \\ Address line \And ...
+\And Authorn\\
+Address line\\ ... \\ Address line}
+To start a separate “row" of authors, use \AND:
+\author{Author 1\\ Address line \\ ... \\ Address line\\
+\AND
+Author 2 \\ Address line \\ ... \\ Address line\\
+\And
+Author 3 \\ Address line \\ ... \\ Address line\\
+}
+If the title and author information does not fit in the area
+allocated, place \setlength\titlebox{height} after the \docu-
+mentclass line where {height} is something like 2.5in.
+LATEX Copyright Notice
+The copyright notice automatically appears if you use
+aaai.sty. If you are creating a technical report, it is not nec-
+essary to include this notice. You may disable the copyright
+line using the\nocopyrightcommand. To change the entire
+text of the copyright slug, use: \copyrighttext {text}. Either
+of these must appear before \maketitle. Please be advised,
+however, thatif you disable or change the copyright line and
+transfer of copyright is required, your paper will not be pub-
+lished.
+Credits
+Any credits to a sponsoring agency should appear in the ac-
+knowledgments section, unless the agency requires different
+placement. If it is necessary to include this information on
+the front page, use \thanks in either the \author or \title com-
+mands. For example:
+\title{Very Important Results in AI\thanks{This work is sup-
+ported by everybody.}}
+Multiple \thanks commands can be given. Each will result in
+a separate footnote indication in the author or title with the
+corresponding text at the botton of the first column of the
+document. Note that the \thanks command is fragile. You
+will need to use \protect.
+Please do not include \pubnote commands in your docu-
+ment.
+Abstract
+The abstract must be placed at the beginning of the first col-
+umn, indented ten points from the left and right margins. The
+title ÒAbstractÓ should appear in ten-point bold type, cen-
+tered above the body of the abstract. The abstract should be
+set in nine-point type with ten-point leading. This concise,
+one-paragraph summary should describe the general thesis
+and conclusion of your paper. A reader should be able to
+learn the purpose of the paper and the reason for its impor-
+tance from the abstract. The abstract should be no more than
+two hundred words in length. (Authors who are submitting
+short one- or two-page extended extracts should provide a
+short abstract of only a sentence or so.)Do not include ref-
+erences in your abstract!
+Page Numbers
+Do noteverprint any page numbers on your paper.
+Text
+The main body of the paper must be formatted in ten-point
+with twelve-point leading (line spacing).
+Citations
+Citations within the text should include the author’s last
+name and year, for example (Newell 1980). Append lower-
+case letters to the year in cases of ambiguity. Multiple au-
+thors should be treated as follows: (Feigenbaum and Engel-
+more 1988) or (Ford, Hayes, and Glymour 1992). In the case
+of four or more authors, list only the first author, followed by
+et al. (Ford et al. 1997).
+Extracts
+Long quotations and extracts should be indented ten points
+from the left and right margins.
+This is an example of an extract or quotation. Note the
+indent on both sides. Quotation marks are not necessary
+if you offset the text in a block like this, and properly
+identify and cite the quotation in the text.
+Footnotes
+Avoid footnotes as much as possible; they interrupt the read-
+ing of the text. When essential, they should be consecu-
+tively numbered throughout with superscript Arabic num-
+bers. Footnotes should appear at the bottom of the page, sep-
+arated from the text by a blank line space and a thin, half-
+point rule.
+Headings and Sections
+When necessary, headings should be used to separate major
+sections of your paper. Remember, you are writing a short
+paper, not a lengthy book! An overabundance of headings
+will tend to make your paper look more like an outline than
+a paper.
+First-level heads should be twelve-point Times Roman
+bold type, mixed case (initial capitals followed by lower
+case on all words except articles, conjunctions, and prepo-
+sitions, which should appear entirely in lower case), with
+fifteen-point leading, centered, with one blank line preced-
+ing them and three additional points of leading following
+them. Second-level headings should be eleven-point Times
+Roman bold type, mixed case, with thirteen-point leading,
+flush left, with one blank line preceding them and three ad-
+ditional points of leading following them. Do not skip a line
+between paragraphs. Third-level headings should be run in
+with the text, ten-point Times Roman bold type, mixed case,
+with twelve-point leading, flush left, with six points of ad-
+ditional space preceding them and no additional points of
+leading following them.
+Section NumbersThe use of section numbers in AAAI
+Press papers is optional. To use section numbers in L ATEX,
+uncomment the setcounter line in your document preamble
+and change the 0 to a 1 or 2. Section numbers should not be
+used in short poster papers.
+
+--- PAGE 6 ---
+Section Headings.Sections should be arranged and
+headed as follows:
+Acknowledgments.The acknowledgments section, if in-
+cluded, appears after the main body of text and is headed
+“Acknowledgments." This section includes acknowledg-
+ments of help from associates and colleagues, credits to
+sponsoring agencies, financial support, and permission to
+publish. Please acknowledge other contributors, grant sup-
+port, and so forth, in this section. Do not put acknowledg-
+ments in a footnote on the first page. If your grant agency
+requires acknowledgment of the grant on page 1, limit the
+footnote to the required statement, and put the remaining
+acknowledgments at the back. Please try to limit acknowl-
+edgments to no more than three sentences.
+Appendices.Any appendices follow the acknowledg-
+ments, if included, or after the main body of text if no ac-
+knowledgments appear.
+ReferencesThe references section should be labeled
+“References" and should appear at the very end of the paper
+(don’t end the paper with references, and then put a figure by
+itself on the last page). A sample list of references is given
+later on in these instructions. Please use a consistent format
+for references. Poorly prepared or sloppy references reflect
+badly on the quality of your paper and your research. Please
+prepare complete and accurate citations.
+Illustrations and Figures
+Figures, drawings, tables, and photographs should be placed
+throughout the paper near the place where they are first dis-
+cussed. Do not group them together at the end of the pa-
+per. If placed at the top or bottom of the paper, illustrations
+may run across both columns. Figures must not invade the
+top, bottom, or side margin areas. Figures must be inserted
+using the \usepackage{graphicx}. Number figures sequen-
+tially, for example, figure 1, and so on.
+The illustration number and caption should appear under
+the illustration. Labels, and other text in illustrations must
+be at least nine-point type.
+Low-Resolution Bitmaps.You may not use low-
+resolution (such as 72 dpi) screen-dumps and GIF
+files—these files contain so few pixels that they are always
+blurry, and illegible when printed. If they are color, they
+will become an indecipherable mess when converted to
+black and white. This is always the case with gif files, which
+should never be used. The resolution of screen dumps can
+be increased by reducing the print size of the original file
+while retaining the same number of pixels. You can also
+enlarge files by manipulating them in software such as
+PhotoShop. Your figures should be a minimum of 266 dpi
+when incorporated into your document.
+LATEX Overflow.L ATEX users please beware: L ATEX will
+sometimes put portions of the figure or table or an equation
+in the margin. If this happens, you need to scale the figure
+or table down, or reformat the equation. Check your log file!
+You must fix any overflow into the margin (that means no
+overfull boxes in LATEX). If you don’t, the overflow text will
+simply be eliminated.Nothing is permitted to intrude into
+the margins.
+Using Color.Your paper will be printed in black and
+white and grayscale. Consequently, because conversion to
+grayscale can cause undesirable effects (red changes to
+black, yellow can disappear, and so forth), we strongly sug-
+gest you avoid placing color figures in your document. Of
+course, any reference to color will be indecipherable to your
+reader.
+Drawings.We suggest you use computer drawing soft-
+ware (such as Adobe Illustrator or, (if unavoidable), the
+drawing tools in Microsoft Word) to create your illustra-
+tions. Do not use Microsoft Publisher. These illustrations
+will look best if all line widths are uniform (half- to two-
+point in size), and you do not create labels over shaded ar-
+eas. Shading should be 133 lines per inch if possible. Use
+Times Roman or Helvetica for all figure call-outs.Do not
+use hairline width lines— be sure that the stroke width of
+all lines is at least .5 pt. Zero point lines will print on a laser
+printer, but will completely disappear on the high-resolution
+devices used by our printers.
+Photographs and Images.Photographs and other images
+should be in grayscale (color photographs will not reproduce
+well; for example, red tones will reproduce as black, yellow
+may turn to white, and so forth) and set to a minimum of 266
+dpi. Do not prescreen images.
+Resizing Graphics.Resize your graphicsbeforeyou in-
+clude them with LaTeX. You maynotuse trim or clip op-
+tions as part of your \includgraphics command. Resize the
+media box of your PDF using a graphics program instead.
+Fonts in Your IllustrationsYou must embed all fonts in
+your graphics before including them in your LaTeX docu-
+ment.
+References
+The aaai.sty file includes a set of definitions for use in for-
+matting references with BibTeX. These definitions make the
+bibliography style fairly close to the one specified below.
+To use these definitions, you also need the BibTeX style file
+“aaai.bst," available in the author kit on the AAAI web site.
+Then, at the end of your paper but before \enddocument, you
+need to put the following lines:
+\bibliographystyle{aaai} \bibliography{bibfile1,bibfile2,...}
+The list of files in the \bibliography command should be
+the names of your BibTeX source files (that is, the .bib files
+referenced in your paper).
+The following commands are available for your use in cit-
+ing references:
+\cite: Cites the given reference(s) with a full citation. This ap-
+pears as “(Author Year)” for one reference, or “(Author Year;
+Author Year)” for multiple references.
+\shortcite: Cites the given reference(s) with just the year. This
+appears as “(Year)” for one reference, or “(Year; Year)” for
+multiple references.
+\citeauthor: Cites the given reference(s) with just the author
+
+--- PAGE 7 ---
+name(s) and no parentheses.
+\citeyear: Cites the given reference(s) with just the date(s) and
+no parentheses.
+Warning:The aaai.sty file is incompatible with the hy-
+perref and natbib packages. If you use either, your references
+will be garbled.
+Formatted bibliographies should look like the following
+examples.
+Book with Multiple Authors
+Engelmore, R., and Morgan, A. eds. 1986.Blackboard Sys-
+tems.Reading, Mass.: Addison-Wesley.
+Journal Article
+Robinson, A. L. 1980a. New Ways to Make Microcircuits
+Smaller.Science208: 1019–1026.
+Magazine Article
+Hasling, D. W.; Clancey, W. J.; and Rennels, G. R. 1983.
+Strategic Explanations in Consultation.The International
+Journal of Man-Machine Studies20(1): 3–19.
+Proceedings Paper Published by a Society
+Clancey, W. J. 1983b. Communication, Simulation, and In-
+telligent Agents: Implications of Personal Intelligent Ma-
+chines for Medical Education. In Proceedings of the Eighth
+International Joint Conference on Artificial Intelligence,
+556–560. Menlo Park, Calif.: International Joint Confer-
+ences on Artificial Intelligence, Inc.
+Proceedings Paper Published by a Press or Publisher
+Clancey, W. J. 1984. Classification Problem Solving. InPro-
+ceedings of the Fourth National Conference on Artificial In-
+telligence,49–54. Menlo Park, Calif.: AAAI Press.
+University Technical Report
+Rice, J. 1986. Poligon: A System for Parallel Problem Solv-
+ing, Technical Report, KSL-86-19, Dept. of Computer Sci-
+ence, Stanford Univ.
+Dissertation or Thesis
+Clancey, W. J. 1979b. Transfer of Rule-Based Expertise
+through a Tutorial Dialogue. Ph.D. diss., Dept. of Computer
+Science, Stanford Univ., Stanford, Calif.
+Forthcoming Publication
+Clancey, W. J. 1986a. The Engineering of Qualitative Mod-
+els. Forthcoming.
+Producing Reliable PDF
+Documents with LATEX
+Generally speaking, PDF files are platform independent and
+accessible to everyone. When creating a paper for a proceed-
+ings or publication in which many PDF documents must be
+merged and then printed on high-resolution PostScript RIPs,
+several requirements must be met that are not normally of
+concern. Thus to ensure that your paper will look like it does
+when printed on your own machine, you must take several
+precautions:
+• Use type 1 fonts (not type 3 fonts)
+• Use only standard Times, Nimbus, and CMR font pack-
+ages (not fonts like F3 or fonts with tildes in the names or
+fonts—other than Computer Modern—that are created for
+specific point sizes, like Times˜19) or fonts with strange
+combinations of numbers and letters
+• Embed all fonts when producing the PDF
+• Do not use the [T1]fontenc package (install the CM super
+fonts package instead)
+Creating Output Using PDFLATEX Is Required
+By using the PDFTEX program instead of straight LATEX or
+TEX, you will probably avoid the type 3 font problem alto-
+gether (unless you use a package that calls for metafont).
+PDFLATEX enables you to create a PDF document directly
+from LATEX source. The one requirement of this software is
+that all your graphics and images must be available in a for-
+mat that PDFLATEX understands (normally PDF).
+PDFLATEX’s default is to create documents with type 1
+fonts. If you find that it is not doing so in your case, it is
+likely that one or more fonts are missing from your system
+or are not in a path that is known to PDFLATEX.
+dvipdf ScriptScripts such as dvipdf which ostensibly by-
+pass the Postscript intermediary should not be used since
+they generally do not instruct dvips to use the config.pdf file.
+dvipdfmDo not use this dvi-PDF conversion package if
+your document contains graphics (and we recommend you
+avoid it even if your document does not contain graphics).
+Ghostscript
+LATEX users should not use GhostScript to create their PDFs.
+Graphics
+If you are still finding type 3 fonts in your PDF file, look at
+your graphics! LATEX users should check all their imported
+graphics files as well for font problems.
+Proofreading Your PDF
+Please check all the pages of your PDF file. Is the page size
+A4? Are there any type 3, Identity-H, or CID fonts? Are all
+the fonts embedded? Are there any areas where equations
+or figures run into the margins? Did you include all your
+figures? Did you follow mixed case capitalization rules for
+your title? Did you include a copyright notice? Do any of
+the pages scroll slowly (because the graphics draw slowly
+on the page)? Are URLs underlined and in color? You will
+need to fix these common errors before submitting your file.
+Improperly Formatted Files
+In the past, AAAI has corrected improperly formatted files
+submitted by the authors. Unfortunately, this has become an
+increasingly burdensome expense that we can no longer ab-
+sorb. Consequently, if your file is improperly formatted, it
+may not be possible to include your paper in the publication.
+If time allows, however, you will be notified via e-mail (with
+a copy to the program chair) of the problems with your file
+and given the option of correcting the file yourself (and pay-
+ing a late fee) or asking that AAAI have the file corrected
+for you, for an additional fee. If you opt to correct the file
+yourself, please note that we cannot provide you with any
+
+--- PAGE 8 ---
+additional advice beyond that given in your packet. Files that
+are not corrected after a second attempt will be withdrawn.
+LATEX 209 Warning
+If you use LATEX 209 we will not be able to publish your
+paper. Convert your paper to LATEX2e.
+Naming Your Electronic File
+We request that you name your LATEX source file with your
+last name (family name) so that it can easily be differenti-
+ated from other submissions. If you name your files with the
+name of the event or “aaai" or “paper" or “camera-ready"
+or some other generic or indecipherable name, you bear all
+risks of loss — it is extremely likely that your file may be
+overwritten.
+Submitting Your Electronic Files to AAAI
+Submitting your files to AAAI is a two-step process. It is
+explained fully in the author registration and submission in-
+structions. Please consult this document for details on how
+to submit your paper.
+Inquiries
+If you have any questions about the preparation or submis-
+sion of your paper as instructed in this document, please
+contact AAAI Press at the address given below. If you have
+technical questions about implementation of the aaai style
+file, please contact an expert at your site. We do not provide
+technical support for LATEX or any other software package.
+To avoid problems, please keep your paper simple, and do
+not incorporate complicated macros and style files.
+AAAI Press
+2275 East Bayshore Road, Suite 160
+Palo Alto, California 94303
+Telephone:(650) 328-3123
+E-mail:See the submission instructions for your par-
+ticular conference or event.
+Additional Resources
+LATEX is a difficult program to master. If you’ve used
+that software, and this document didn’t help or some
+items were not explained clearly, we recommend you read
+Michael Shell’s excellent document (testflow doc.txt V1.0a
+2002/08/13) about obtaining correct PS/PDF output on
+LATEX systems. (It was written for another purpose, but it has
+general application as well). It is available at www.ctan.org
+in the tex-archive.
+Acknowledgments
+AAAI is especially grateful to Peter Patel Schneider for his
+work in implementing the aaai.sty file, liberally using the
+ideas of other style hackers, including Barbara Beeton. We
+also acknowledge with thanks the work of George Ferguson
+for his guide to using the style and BibTeX files — which
+has been incorporated into this document — and Hans Gues-
+gen, who provided several timely modifications, as well as
+the many others who have, from time to time, sent in sug-
+gestions on improvements to the AAAI style.
+The preparation of the L ATEX and BibTEX files that im-
+plement these instructions was supported by Schlumberger
+Palo Alto Research, AT&T Bell Laboratories, Morgan Kauf-
+mann Publishers, The Live Oak Press, LLC, and AAAI
+Press. Bibliography style changes were added by Sunil Is-
+sar.\pubnote was added by J. Scott Penberthy. George Fer-
+guson added support for printing the AAAI copyright slug.
+Additional changes to aaai.sty and aaai.bst have been made
+by the AAAI staff.
+Thank you for reading these instructions carefully. We look
+forward to receiving your electronic files!
+

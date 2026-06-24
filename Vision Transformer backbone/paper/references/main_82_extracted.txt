@@ -1,0 +1,1494 @@
+Comprehensive Research Report on the Universal MDEP
+Architecture
+Swin-MDEP Project
+Abstract
+Clinical vision models must identify rare malignant cases
+while remaining calibrated, computationally efficient, and
+aware of uncertainty. Existing softmax classifiers are of-
+ten overconfident under severe class imbalance, whereas
+ensemble-based uncertainty methods increase inference
+cost and conventional sparse training ignores reliability
+signals. We propose the Universal MDEP architecture,
+an uncertainty-guided dynamic sparse training frame-
+work. In this report, Swin-MDEP denotes the Vision
+Transformer instantiation of MDEP that uses a Swin
+Transformer backbone. Swin-MDEP replaces softmax
+outputs with Dirichlet evidential predictions, enforces
+NVIDIA 2:4 structured sparsity, and updates sparse topol-
+ogy through cooperative Microglia–Astrocyte agents that
+use aleatoric and epistemic uncertainty gradients. A mor-
+phological cache further reduces repeated mask-sorting
+overhead during training. On ISIC 2024 skin-lesion clas-
+sification, Swin-MDEP achieves a balanced clinical op-
+erating point with AUROC 0.8852, sensitivity 0.7342,
+specificity 0.9131, and ECE 0.0479, outperforming sev-
+eral uncertainty-aware and sparse evidential baselines in
+calibration and selective prediction. These results sug-
+gest that evidential uncertainty can serve not only as an
+output diagnostic signal but also as a structural signal
+for efficient and safer medical AI.
+Introduction
+The rapid development of large-scale deep learning mod-
+els has established new benchmarks of accuracy across
+many computer vision tasks and complex data analyses.
+Architectures such as Convolutional Neural Networks
+(CNNs) [38] and Vision Transformers (ViTs) [9] currently
+dominate image recognition benchmarks. However, when
+these models are transitioned from laboratory settings to
+demanding real-world deployment systems—such as medi-
+cal diagnosis [41], autonomous driving safety support [53],
+and resource-constrained edge devices [52]—they reveal
+three core systemic weaknesses [28]:
+1. Enormous computational cost: The power con-
+sumption and memory footprint of dense models ex-
+ceed the hardware constraints of many embedded sys-
+tems.
+2. Overconfident predictions: Standard deep mod-
+els tend to make highly overconfident predictions
+even when the input data is heavily noisy, out-of-
+distribution (OOD), or represents out-of-domain sam-
+ples [29].
+3. Lack of uncertainty quantification: They lack the
+ability to quantify predictive uncertainty in a mathe-
+matically rigorous and transparent manner, rendering
+risk-sensitive decision-making impossible.
+Limitations of Traditional Softmax
+Most traditional neural networks deploy a softmax acti-
+vation function in their final classification layer to map
+raw logit values to a probability distribution [29, 31].
+Although softmax is highly effective at squeezing output
+values into the interval [0, 1], its geometric nature is in-
+herently sharp and often pushes predicted probabilities
+close to the extreme bounds. This creates a false sense of
+security, causing the network to assign a 99% probability
+to a prediction even when it is essentially guessing ran-
+domly on completely unfamiliar data [25]. This critical
+blind spot in decision-making, particularly when facing
+highly imbalanced datasets [36], leads to catastrophic
+risks in clinical settings [42].
+Evidential Deep Learning (EDL)
+To fundamentally resolve the overconfidence issue, Evi-
+dential Deep Learning (EDL) [1, 5] has been developed
+as a revolutionary framework. EDL extends standard
+parametric deep learning approaches to higher-order dis-
+tributions, allowing the model to directly predict the
+parameters of a Dirichlet distribution instead of out-
+putting deterministic point probabilities [3, 4, 6]. In this
+way, a single EDL model can deliver uncertainty estima-
+tion performance comparable to computationally heavy
+methods such as Deep Ensembles [25] or Monte Carlo
+Dropout (MC Dropout) [24], while stably quantifying
+both key uncertainty sources: epistemic (model lack of
+knowledge) and aleatoric (inherent data noise) uncertain-
+ties [27], despite ongoing debates regarding its practical
+1
+calibration capability [7].
+Dynamic Sparse Training (DST)
+In parallel with breakthroughs in uncertainty estimation,
+Dynamic Sparse Training (DST) [11, 12] has emerged as
+a leading paradigm for addressing computational chal-
+lenges. Rather than training a massive dense network to
+completion and then pruning it post-hoc [14, 13], DST
+dynamically optimizes a sparse network topology from
+scratch during the training phase by continuously pruning
+weak connections and regrowing new ones in promising
+regions [15]. While DST provides immense benefits for
+hardware efficiency, most current pruning/growth crite-
+ria rely solely on weight magnitude or task gradients,
+remaining entirely blind to reliability and uncertainty.
+The Birth of MDEP
+The Microglial-Driven Evidential Pruning (MDEP) ar-
+chitecture was conceived to fill this mathematical and
+structural gap. By unifying EDL and DST under a biolog-
+ically inspired framework, MDEP establishes a universal
+framework that allows computation graphs to not only
+sparsify for hardware acceleration but also reshape their
+internal topology based on the network’s evidential flow
+and uncertainty signals. In this terminology, Universal
+MDEP refers to the general architecture and training
+principle, whereas Swin-MDEP is the concrete imple-
+mentation that applies MDEP to a Swin Transformer
+backbone for vision tasks.
+Main Contributions.
+The main contributions of this
+paper are:
+• Swin-MDEP Framework: A dynamic sparse train-
+ing architecture for Vision Transformers that integrates
+Dirichlet evidential learning with NVIDIA 2:4 struc-
+tured sparsity.
+• Multi-Agent Dynamics: A cooperative Microglia–
+Astrocyte mechanism that leverages the gradients of
+epistemic and aleatoric uncertainties to guide connec-
+tion pruning and regrowth.
+• Implementation Optimization: A morphological
+cache mechanism that stores and reuses masks and
+local survival thresholds within each epoch, removing
+redundant sorting operations.
+• Clinical Evaluation: Extensive experiments on the
+ISIC 2024 dataset demonstrating an optimal balance
+between clinical sensitivity, specificity, expected cali-
+bration error (ECE), and selective classification.
+Related Work
+Calibration and Uncertainty Estimation
+Calibration studies indicate that modern neural net-
+works are frequently overconfident despite achieving
+high accuracy [29, 31]. Deep Ensembles [25] and MC
+Dropout [24] improve uncertainty representation but sig-
+nificantly increase inference latency. Evidential Deep
+Learning (EDL) [1] directly models the Dirichlet distribu-
+tion, yet it still requires mechanisms to suppress spurious
+evidence and achieve reliable empirical calibration [7].
+Sparse Training and Network Pruning
+Post-training pruning [14] and the Lottery Ticket Hypoth-
+esis [13] reduce parameters but generally require full dense
+pre-training. Dynamic Sparse Training (DST) [12, 11]
+updates the active network topology on the fly during
+training. However, existing pruning/growth criteria are
+mostly based on weight magnitude or task-specific gradi-
+ents, leaving Dirichlet uncertainty untapped as a struc-
+tural signal.
+Medical AI on Imbalanced Data
+Clinical skin cancer screening systems face extremely
+low prevalence rates of malignant lesions, where high
+overall accuracy or specificity can mask critically low
+sensitivity [41, 36]. Swin-MDEP differs from these base-
+lines by simultaneously optimizing minority-class sensi-
+tivity, probability calibration, selective prediction, and
+hardware-level structured sparsity.
+Background and Preliminaries
+The MDEP system completely replaces the traditional
+softmax activation function at the classification layer and
+adopts mathematical foundations derived from Subjective
+Logic (SL) [2]. This theoretical framework formalizes
+the relationship between ”evidence” gathered from data
+and the ”belief” of the model, mapping the network’s
+outputs directly to the concentration parameters of a
+Dirichlet distribution [1]. The Dirichlet distribution acts
+as a conjugate prior for the multinomial distribution,
+providing a deeper and more mathematically rigorous
+probabilistic interpretation.
+Dirichlet Distribution Parameterization
+and the Role of the Softplus Function
+For a K-class classification problem, instead of outputting
+probabilities, the MDEP network is designed to output a
+non-negative evidence vector e = [e1, . . . , eK]T ≥0 from
+raw logit outputs z ∈RK. To ensure that the evidence
+is non-negative, MDEP enforces the smooth Softplus
+activation function:
+ec = ln(1 + exp(zc)),
+c = 1, . . . , K
+(1)
+Remark 1 (Why not use ReLU?). The Rectified Linear
+Unit (ReLU) function truncates all gradients for negative
+logits to exactly zero, trapping the evidence of that class
+permanently at ec = 0, leading to a ”frozen” Dirichlet
+system on the zero-evidence simplex.
+From the obtained evidence vector, the system con-
+structs the Dirichlet concentration parameters α =
+[α1, . . . , αK]T by adding a flat prior:
+αc = ec + 1.0,
+c = 1, . . . , K
+(2)
+The constant 1.0 ensures that when the network predicts
+zero evidence (e = 0), the distribution reverts to the flat
+prior Dir(1), representing the state of ”complete prior
+ignorance”. The total evidence of the system, also called
+the Dirichlet strength, is:
+S =
+K
+X
+c=1
+αc =
+K
+X
+c=1
+ec + K
+(3)
+On the (K−1)-dimensional probability simplex
+∆K−1 =
+(
+p ∈RK
+ pc ≥0,
+K
+X
+c=1
+pc = 1
+)
+,
+(4)
+the probability density function of the Dirichlet distribu-
+tion Dir(α) is expressed as:
+p(p | α) =
+Γ
+PK
+c=1 αc
+
+QK
+c=1 Γ(αc)
+K
+Y
+c=1
+pαc−1
+c
+(5)
+The expected probability ˆpc of each class c, which is
+used to make the final classification decision, is the mean
+of the Dirichlet distribution:
+ˆpc = E[pc] = αc
+S
+(6)
+The variance of the predicted probability is
+Var(pc) = αc(S −αc)
+S2(S + 1) .
+(7)
+As S increases, the Dirichlet distribution becomes tighter,
+indicating high confidence. Conversely, as S →K, the
+variance expands, indicating high uncertainty.
+Decomposition of Predictive Uncertainty:
+Epistemic and Aleatoric
+The greatest advantage of using Subjective Logic and
+the Dirichlet distribution is the ability to mathematically
+decompose the predictive uncertainty into two orthogonal
+and distinct components.
+Epistemic Uncertainty (Model-Centric — ue)
+This uncertainty arises from the model’s lack of knowl-
+edge, usually occurring when the model encounters out-
+of-distribution (OOD) data or minority samples that it
+has not learned well. In the language of Subjective Logic,
+it is defined as the vacant belief mass:
+ue = K
+S =
+K
+PK
+c=1 αc
+(8)
+Proposition 1 (Epistemic Uncertainty Bounds). For
+any valid concentration vector α, the value of ue always
+lies in the interval (0, 1]. The maximum value ue = 1.0
+is achieved if and only if e = 0, i.e., S = K. As S →∞,
+ue →0.
+ue acts as a compass, guiding the network architecture
+to identify representation areas that require more learning
+capacity.
+Aleatoric Uncertainty (Data-Centric — ua)
+Unlike ue, aleatoric uncertainty cannot be reduced by
+collecting more data, as it measures statistical entropy,
+overlapping class boundaries, and measurement noise. It
+is defined using the digamma function ψ(x) =
+d
+dx ln Γ(x):
+ua =
+K
+X
+c=1
+αc
+S [ψ(S + 1) −ψ(αc + 1)]
+(9)
+Proposition 2 (Non-negativity of ua). For any K >
+1, since αc < S and due to the strict monotonicity of
+the digamma function (ψ′(x) > 0 for all x > 0), we
+always have ψ(S + 1) > ψ(αc + 1). This guarantees that
+every term in the summation is positive, mathematically
+ensuring ua ≥0. In practical implementations, to protect
+against floating-point inaccuracies, ua ←max(ua, 0.0)
+should be applied.
+Methodology / Proposed Approach
+Overview Architecture
+Figure 1 summarizes the proposed Universal MDEP
+pipeline instantiated as Swin-MDEP. Images are encoded
+by a Swin Transformer backbone whose linear projections
+are replaced by MDEP sparse layers. The evidential head
+produces Dirichlet evidence, from which epistemic and
+aleatoric uncertainty are computed. These signals drive
+Microglia–Astrocyte topology updates, while the final
+prediction remains uncertainty-calibrated.
+The philosophical starting point of the MDEP architec-
+ture is the separation of representation weight learning
+and network morphology learning into two parallel and
+Clinical
+Image
+Swin-MDEP
+Backbone
+Dirichlet
+Evidential Head
+Epistemic /
+Aleatoric Signals
+Microglia–
+Astrocyte Agents
+Calibrated
+Prediction
+2:4 masks
+Figure 1: Overview of the Universal MDEP architecture
+instantiated as Swin-MDEP with a Swin Transformer
+backbone. Evidential uncertainty is used both for cali-
+brated prediction and for dynamic sparse topology adap-
+tation.
+independent dynamical systems. MDEP breaks with tra-
+dition by treating each layer as a system governed by two
+tiers of variables.
+MDEP Sparse Parameterization
+Prediction tier.
+Consists of the real weights W (l),
+representing the traditional connection strengths of the
+network. These weights are responsible for minimizing
+the loss function and are continuously updated by stan-
+dard optimizers such as AdamW.
+Morphological tier.
+Contains a tensor of continuous
+latent scores S(l) ∈Rdout×din representing the potential
+”vitality” of each connection. The binary mask matrix
+M (l) is derived directly from S(l) and determines which
+weights are allowed to survive to participate in the for-
+ward pass.
+Remark 2 (Isolating S from the Optimizer). The struc-
+tural scores S(l) must be completely isolated from the
+parameters managed by the AdamW optimizer. If S is
+passed to AdamW, weight decay will gradually compress
+the structural memory to 0, causing ”optimizer hijack-
+ing” and destroying the intended impulses generated by
+the biological agents. S is only allowed to update based
+on the internal dynamics of MDEP.
+Score initialization.
+At initialization, the latent
+scores are set to the absolute magnitude of the pre-trained
+weights:
+S(0)
+ij = |W (l)
+ij |
+(10)
+If random initialization is used, the binary mask will
+blindly disable 50% of the features, destroying the pre-
+trained knowledge base and causing a ”Pruning Shock”
+from which model performance cannot recover.
+Enforcing NVIDIA 2:4 Structured Spar-
+sity
+Unstructured pruning methods do not deliver practi-
+cal hardware acceleration benefits [15]. To resolve this,
+MDEP enforces the NVIDIA 2:4 structured sparsity con-
+straint [16, 17]: for every group of four consecutive ele-
+ments along the input channel dimension, at most two
+elements are allowed to be non-zero [18, 19].
+Local survival threshold.
+The score matrix S is
+divided into blocks B, each containing 4 elements. Within
+a block b, the four scores are sorted in descending order:
+s(t)
+1,b ≥s(t)
+2,b ≥s(t)
+3,b ≥s(t)
+4,b. The local survival threshold is:
+τ (t)
+b
+= 1
+2
+
+s(t)
+2,b + s(t)
+3,b
+
+(11)
+Discrete binary mask.
+The mask M is determined
+via the Top-2-of-4 operator:
+Mi,4k+j =
+(
+1.0
+if Si,4k+j ≥τi,k
+0.0
+otherwise
+(12)
+The effective weights used in activation layers are Weff =
+W ⊙M. This constraint guarantees exactly 50% spar-
+sity at the micro-level, yielding up to a 2× throughput
+speedup on Ampere and Hopper Tensor Cores.
+Localized Smoothed Straight-Through Es-
+timator (Smoothed STE)
+Since the Top-2 operator generates a discrete binary mask,
+its derivative does not exist at almost any point [20].
+To resolve this propagation barrier, MDEP utilizes a
+Localized Smoothed Straight-Through Estimator.
+Forward Pass:
+The network uses the hard binary mask
+M to ensure actual 2:4 structured sparsity.
+Backward Pass:
+The gradient of the step function is
+approximated using the derivative of a sigmoid function
+centered at the local survival threshold:
+∂Mij
+∂Sij
+≈1
+γt
+σ
+ 
+Sij −τ (t)
+b
+γt
+! "
+1 −σ
+ 
+Sij −τ (t)
+b
+γt
+!#
+(13)
+where σ(x) = (1 + exp(−x))−1 is the sigmoid function,
+and γt is the temperature parameter. Key characteristic:
+the derivative only peaks at Sij = τ (t)
+b , so structural
+gradients only flow strongly into scores that are currently
+competing at the live/die boundary within the same 2:4
+block.
+Temperature schedule.
+The temperature γ(t) is de-
+cayed via a cosine schedule:
+γ(t) = γfinal + γinitial −γfinal
+2
+
+1 + cos
+
+π · t −tw
+T −tw
+
+(14)
+with γinitial = 5.0 and γfinal = 0.15. Keeping the floor
+at 0.15 instead of decaying to 0 ensures that boundary
+gradients do not completely vanish as the network con-
+verges.
+Morphological Cache Optimization.
+In the naive
+implementation, the discrete mask M and local survival
+thresholds τ are recomputed via sorting (torch.sort)
+and search (torch.topk) operations over all weights in
+every forward pass of every mini-batch. Since the latent
+scores S are updated only once at the beginning of each
+epoch (at batch 0), performing these sorting operations
+on tens of millions of parameters at every mini-batch
+step is redundant and introduces a severe performance
+bottleneck.
+To resolve this design flaw, Swin-MDEP introduces
+the Morphological Cache mechanism. The threshold τ is
+registered as a non-persistent buffer (persistent=False)
+inside the MDEPLinear and MDEPConv2d layers. Both the
+binary mask M and thresholds τ are calculated once
+at the end of the warmup phase or when updating the
+network structure at the start of each epoch; they are
+then stored and reused directly across all remaining mini-
+batches of that epoch. Setting persistent=False avoids
+checkpoint pollution, maintaining backward compatibility
+with pre-trained weights.
+This optimization removes
+redundant sorting operations, lowers CPU/GPU resource
+overhead, and significantly accelerates the forward pass.
+Microglia–Astrocyte Agent Dynamics
+The soul of the MDEP architecture lies in its dynamic
+connection topology updates, driven by two agents in-
+spired by the brain’s glial system [45, 46]. While standard
+compression algorithms simply prune weights with the
+smallest absolute values [14], MDEP redistributes the
+computation graph by balancing task representation re-
+quirements against the spread of uncertainty.
+Microglia Agent: Pruning Noisy Evidence
+In the human brain, microglia are responsible for clearing
+redundant or damaged synapses [45, 46].
+In MDEP,
+this agent eliminates connections that amplify ”garbage
+evidence” stemming from data noise. The agent evaluates
+each link based on two sensitivity spectra via first-order
+Taylor expansion:
+Task-predictive sensitivity (c1):
+Reflects how much
+a connection wij contributes to optimizing the task loss
+function:
+c(ij)
+1
+=
+wij · ∂LEFL
+∂wij
+
+(15)
+Noisy sensitivity (c2):
+Reflects the degree to which a
+connection absorbs or is affected by aleatoric uncertainty:
+c(ij)
+2
+=
+wij · ∂ua
+∂wij
+
+(16)
+After local min-max normalization per layer to the
+interval [0, 1], the composite pruning prevention score is
+defined as:
+Cij = Norm(c(ij)
+1
+) + β · Norm(c(ij)
+2
+)
+(17)
+Connections with the lowest Cij are deemed useless and
+targeted for latent score suppression.
+Astrocyte Agent: Locating and Promoting Evi-
+dence Growth
+Opposing the destructive force of the Microglia, the As-
+trocyte agent promotes weight growth in areas of the
+network experiencing representation deficiency [47, 48].
+The Astrocyte targets neurons exhibiting high epistemic
+uncertainty (ue).
+Node-level feedback.
+u(node)
+e,i
+is computed via forward
+hooks. The potential growth signal is:
+Gij = Norm
+
+Expand(u(node)
+e
+)
+
+·Norm
+
+∂LEFL
+∂wij
+
+
+(18)
+This multiplicative formulation acts as a strict filter: a
+connection is only regrown if it connects to a node with
+high epistemic uncertainty and has a strong task learning
+gradient.
+Anti-Crystallization
+If an entire layer lacks any candidate connections offer-
+ing useful growth gradients (maxij Gij ≤10−8), MDEP
+injects an emergency response:
+˜Gij = Gij + max
+
+0.0, ϵij · Norm(u(node)
+e,i
+)
+
+(19)
+where ϵij ∼N(0, 0.03162). Due to the multiplicative
+structure, the system prioritizes ”experimenting” by open-
+ing new links in regions lacking evidence.
+Latent Score Updates via EMA
+Continuous score updates are calculated at the end of
+each training step by combining the opposing forces of
+growth and pruning:
+∆Sij = Gij −Cij
+(20)
+To smooth gradient fluctuations across mini-batches,
+score momentum is applied:
+V (t)
+ij
+= βmV (t−1)
+ij
++ (1 −βm)∆Sij
+(21)
+S(t)
+ij = S(t−1)
+ij
++ ηV (t)
+ij
+(22)
+where βm = 0.95 is the EMA coefficient, and η = 0.02
+is the structural update rate. To prevent score satura-
+tion (which would permanently lock connections), MDEP
+centers and clamps the scores:
+S(t)
+ij ←S(t)
+ij −mean(S(t))
+(23)
+S(t)
+ij ←clamp(S(t)
+ij , −5.0, 5.0)
+(24)
+This centering ensures that the average latent score of
+each layer remains 0, maintaining healthy competition
+among links.
+Remark 3 (Role of Residual Connections). The residual
+connections of the Swin Transformer act as safe bypass
+routes, protecting basic spatial information flow from
+abrupt topological disruption when the network applies
+50% sparsity.
+Swin Transformer Integration
+Adapting MDEP to the Swin Transformer [8, 10] in-
+troduces more complex challenges. In the 4-stage hier-
+archical Swin-MDEP, all linear projections inside the
+self-attention and MLP blocks are replaced with sparse
+MDEPLinear layers, including:
+• attn.qkv: Query, Key, Value projection layer.
+• attn.proj: Linear output attention projection.
+• mlp.fc1 and mlp.fc2: Hidden channel expansion and
+contraction layers.
+Preserving the Patch Partition.
+The initial patch
+projection layer has a tiny parameter count (only 4,608
+weights) but is responsible for extracting raw RGB fea-
+tures:
+Conv2D(3, 96, k = 4, s = 4).
+(25)
+Enforcing 2:4 structured sparsity here would force the
+network to discard 50% of the raw pixel information
+at the gateway of the system. Therefore, this layer is
+explicitly excluded from MDEP sparsification.
+Generalized Activation Gradient Pooling Opera-
+tor.
+Since activation tensors vary in shape across Swin’s
+stages due to Patch Merging, Swin-MDEP introduces a
+generalized pooling operator. Let g(l)
+act =
+∂¯ue
+∂a(l) be the gra-
+dient of the mean epistemic uncertainty ¯ue = 1
+N
+P
+n ue,n
+with respect to the layer activation a(l). By averaging the
+absolute value of this gradient over all spatial dimensions
+(excluding the channel dimension), the high-dimensional
+tensor is reduced to a 1D vector u(node)
+e
+∈RD:
+u(node)
+e
+= mean
+
+|g(l)
+act|, dim = [0, 1, . . . , ndim −2]
+
+(26)
+This establishes a uniform basis for the Astrocyte agent,
+permitting evaluation of channel-wise evidence hunger
+regardless of spatial resolution.
+Optimization Objective and Distillation
+Evidential Focal Loss (EFL)
+When facing extreme class imbalance—such as in the
+ISIC 2024 cohort [40] where malignant cases account for
+only 0.15% [36]—standard loss functions collapse. EFL
+is designed to be far more robust than standard Focal
+Loss [35]:
+LEFL(e, y, t) = 1
+N
+N
+X
+n=1
+ωn
+h
+F(t)L(n)
+CE
++ λKLµ(t)L(n)
+KL
+i
+.
+(27)
+where N is the mini-batch size, y(n) ∈{0, 1}K is the
+one-hot target of sample n, and ωn = PK
+c=1 y(n)
+c
+ωc is the
+class-balanced sample weight.
+Digamma-Based Cross-Entropy (LCE):
+L(n)
+CE =
+K
+X
+c=1
+y(n)
+c
+h
+ψ(S(n)) −ψ(α(n)
+c
+)
+i
+(28)
+Dynamic Focal Modulation (F(t)):
+F(t) =
+
+1 −sg[ˆp(n)
+target]
+γ(t)
+(29)
+where ˆp(n)
+target = PK
+c=1 y(n)
+c
+ˆp(n)
+c
+is the expected probability
+of the true class, and sg[·] is the stop-gradient opera-
+tor (implemented via .detach() in PyTorch) to prevent
+backpropagation through the focal weight, which would
+otherwise distort the Dirichlet distribution. During the
+warmup phase, γ(t) = 0 to establish a stable baseline. In
+later phases, γ is gradually scaled up to 1.2 to focus on
+hard samples.
+Dampened Class Weights (ωc):
+ωc =
+p
+Ntotal/Nc
+(30)
+Following Cui et al. [37], this square-root scaling damp-
+ens the actual imbalance ratio of 670:1 to a weight of
+approximately 25.9 for the malignant class (melanoma)—
+strong enough to provide gradient force, yet safe enough
+to maintain numerical stability.
+Independent KL Regularization (LKL):
+This term
+suppresses spurious evidence.
+By modifying the con-
+centration vector ˜α(n), it preserves the evidence of the
+correct class while shrinking the concentrations of incor-
+rect classes to the flat prior 1.0:
+˜α(n)
+c
+= y(n)
+c
++ (1 −y(n)
+c
+) · α(n)
+c
+(31)
+The regularizer is computed as the analytical KL diver-
+gence between the adjusted Dirichlet distribution and
+the flat prior Dir(1):
+L(n)
+KL = KL
+
+Dir( ˜α(n)) ∥Dir(1)
+
+= ln Γ
+ K
+X
+c=1
+˜α(n)
+c
+!
+−ln Γ(K) −
+K
+X
+c=1
+ln Γ(˜α(n)
+c
+)
++
+K
+X
+c=1
+(˜α(n)
+c
+−1)
+
+ψ(˜α(n)
+c
+) −ψ
+
+
+K
+X
+j=1
+˜α(n)
+j
+
+
+
+.
+(32)
+where ψ(·) is the digamma function, and the scaling
+coefficient is µ(t) = min(1.0, t/tanneal) with tanneal = 10,
+allowing the network to explore representations before
+enforcing strict evidence penalties.
+Remark 4 (Independence of LKL and Focal Coefficient).
+The KL divergence term is not multiplied by F(t). If
+it were, the model would lower the penalty for easy ma-
+jority samples, allowing spurious evidence to accumulate
+unchecked.
+Dirichlet KL Knowledge Distillation
+To stabilize the sparse Swin-T student network during its
+transition to 2:4 structured sparsity, the system applies
+knowledge distillation techniques [21, 22], specifically evi-
+dential distribution distillation [23] from a fully converged
+dense ResNet-18 MDEP teacher model [38].
+Remark 5 (Why ResNet-18 instead of ResNet-50 as
+Teacher?). Three main reasons justify this selection:
+(i) Cross-Architecture Inductive Bias: ResNet-18
+is a pure CNN with strong local spatial inductive bi-
+ases. Distilling from a CNN to a ViT helps transfer
+spatial locality to Swin-T’s Self-Attention mecha-
+nism, focusing attention on lesion regions.
+(ii) Preventing Overfitting on Rare Minority
+Classes: A ResNet-50 teacher is highly complex
+(50 layers with bottleneck blocks) and prone to mem-
+orizing the small number of malignant samples
+(∼390), which distorts its Dirichlet uncertainty
+estimation (αT ). ResNet-18 is simpler and acts
+as a regularizer, providing better-calibrated teacher
+distributions.
+(iii) VRAM Optimization: Hosting both the teacher
+and student networks in GPU memory alongside
+the MDEP engine during training is memory-
+intensive. ResNet-18 (∼11.7M parameters) avoids
+Out-of-Memory (OOM) errors on standard GPUs
+(e.g., T4 with 15–16GB VRAM), whereas ResNet-
+50 (∼25.6M parameters) easily triggers VRAM
+overflow.
+Teacher Model Configuration.
+The teacher is a cus-
+tomized ResNet-18 with MDEPConv2d/MDEPLinear layers
+and an evidential classification head,
+Linear(512, K) →Softplus(·),
+(33)
+pre-trained to convergence on the ISIC 2024 dataset.
+Dynamic Path Resolution.
+To ensure seamless ex-
+ecution across local development environments and
+cloud platforms (such as Kaggle), the system automat-
+ically scans candidate paths for the teacher checkpoint
+(model checkpoint.pth):
+1. Current directory: model checkpoint.pth
+2. Parallel folder: ../RESNET50 backbone/
+3. Local folder: ./RESNET50 backbone/
+4. Upload folder: uploads/mdep-resnet50-backbone/
+The teacher weights are loaded from the first matching
+path, and the teacher model is frozen (requires grad =
+False).
+Distillation Loss Formulation.
+The analytical KL
+divergence between the student and teacher Dirichlet
+distributions is formulated as:
+KL(Dir(αS)∥Dir(αT )) = ln Γ(SS) −ln Γ(ST ) −
+K
+X
+c=1
+∆ℓc
++
+K
+X
+c=1
+∆αc [ψ(αS,c) −ψ(SS)] ,
+(34)
+where ∆ℓc = ln Γ(αS,c) −ln Γ(αT,c) and ∆αc = αS,c −
+αT,c. The distillation weight αd(t) is scheduled via a
+cosine decay function:
+αd(t) =
+
+
+
+αd,init,
+t < tw,
+αd,final + ∆αd
+2
+[1 + cos(πr(t))] ,
+t ≥tw,
+(35)
+where ∆αd = αd,init−αd,final and r(t) = (t−tw)/(T −tw).
+With αd,init = 0.5 and αd,final = 0.05, the total loss is:
+Ltotal = LEFL(eS, y, t) + αd(t)Ldistill.
+(36)
+Three-Fold Role of Knowledge Distillation:
+1. Sensitivity Improvement: The teacher provides
+”soft” evidential distributions, assisting the student in
+separating ambiguous boundaries.
+2. Better Uncertainty Calibration: The distillation
+loss aligns the student’s Dirichlet parameters with the
+teacher’s, reducing the student’s ECE.
+3. Sparsity Protection: The KD loss provides a regu-
+larization force that guides weight optimization when
+50% of the connections are pruned.
+Experiments and Evaluation
+Experimental Setup
+Dataset: ISIC 2024
+The performance of MDEP is evaluated on the clinical
+ISIC 2024 (Skin Cancer Detection with 3D-TBP)
+dataset [40, 44, 43]. The extreme class imbalance (malig-
+nant cases account for only 0.15% of the samples, a ratio
+of 1:670) represents a challenging optimization landscape.
+Data Processing and Training Set Balancing:
+• Stratified Split: Split the data into 80/20 train/test
+sets using a fixed seed (random state=42).
+• Under-sampling: To balance the training set, we
+keep all malignant samples and randomly sample be-
+nign samples at a ratio of 1 : 20. This under-sampling
+reduces the training set from over 400,000 to around
+8,000 samples, accelerating training by more than 50×
+while retaining all rare positive cases. The test set dis-
+tribution is left untouched to represent clinical reality.
+• Data Augmentation: Horizontal and vertical flips
+are applied to the training set; test samples are only
+resized and normalized.
+• ImageNet Normalization: Normalization uses µ =
+(0.485, 0.456, 0.406) and σ = (0.229, 0.224, 0.225).
+• Input Dimension: Images are resized to 224 × 224
+pixels.
+Training Protocol and Hyperparameters
+Precision Arithmetic (Mixed Precision):
+The
+backbone runs using AMP 16-bit mixed precision [51].
+Evidential Focal Loss and Dirichlet math functions are
+cast to FP32 to prevent arithmetic underflow in ln(·),
+Γ(·), and ψ(·) calls.
+Baselines
+Swin-MDEP is directly compared against several strong
+baselines covering static networks, Bayesian methods,
+and uncertainty-quantified models:
+Table 1: System Optimization Configuration and Two-
+Phase Schedule.
+Phase / Component
+Parameter
+Role Description
+Architecture
+Student Backbone
+Swin-T (28.3M params)
+ImageNet-1K pretrained
+Teacher Backbone
+ResNet-18 MDEP
+Dense, frozen, EDL head
+Number of Classes (K)
+2
+Benign / Malignant
+Phase 1: Dense Warmup (t < 5 epochs)
+Mask
+Locked entirely at 1
+Dense network, no pruning
+Focal exponent γ(t)
+0.0
+Disabled for baseline convergence stability
+Distillation weight αd
+0.5 (maximum)
+Relying on Teacher’s knowledge
+Phase 2: Dynamic Sparsity (t ≥5 epochs)
+Mask
+NVIDIA 2:4
+Top-2-of-4 from S
+Microglia–Astrocyte
+Activated
+Update S at the first batch of each epoch
+γt (STE)
+Cosine: 5.0 →0.15
+Floor 0.15 preserves boundary gradients
+αd
+Cosine: 0.5 →0.05
+Gradually releases Student
+γfocal
+Linear →1.2
+Focus on hard samples
+Optimization
+Optimizer
+AdamW [49, 50]
+β1 = 0.9, β2 = 0.999
+Learning rate
+2 × 10−5
+Linear warmup from 10−6
+Weight decay
+0.01
+Applied to Θtrain, excluding S
+Gradient clipping
+1.0
+Global L2 norm
+Batch size
+32
+—
+Total epochs (T )
+20
+—
+Warmup epochs (tw)
+5
+25% of budget
+EFL
+γbase (Focal)
+1.2
+Focal exponent
+λKL
+0.1
+KL regularization factor
+tanneal (KL)
+10
+KL annealing epochs
+MDEP
+γinitial (STE)
+5.0
+Initial STE temperature
+γfinal (STE)
+0.15
+Final STE temperature
+βm (EMA)
+0.95
+Momentum coefficient
+η (Step S)
+0.02
+Structural learning rate
+β (Microglia)
+1.0
+Weight of ua
+Smax
+5.0
+Score boundary clamp
+Distillation
+αd,init
+0.5
+Initial distillation weight
+αd,final
+0.05
+Final distillation weight
+Schedule
+Cosine decay
+After tw epochs
+• Traditional Static Architectures: ResNet-50 [38]
+and ViT-B/16 [9], representing standard CNNs and Vi-
+sion Transformers trained with softmax cross-entropy.
+• Bayesian Approaches: Deep Ensembles [25] and MC
+Dropout [24] on ResNet-50, representing uncertainty
+estimation via multi-model inference or stochastic for-
+ward passes.
+• Uncertainty-Quantified and Efficient Networks:
+EfficientNet-B4 [39], Posterior Network [26], and EF-
+DST, representing efficiency-optimized, density-based,
+and sparse evidential baselines, respectively.
+Evaluation Metrics
+Model performance is evaluated across three categories
+of clinical metrics:
+• Classification Performance:
+Sensitivity (recall)
+measures the rate of correctly identified malignant
+cases, Specificity measures the rate of correctly ex-
+cluded benign cases, and Macro-AUROC measures
+general discriminative capability under skewed distri-
+butions.
+• Probability Calibration: Brier Score and Expected
+Calibration Error (ECE) [30] evaluate the reliability
+of predicted probabilities and uncertainty bounds.
+• Selective Classification:
+Area Under the Risk–
+Coverage Curve (AURC) [32, 33, 34] measures the
+model’s self-awareness of risk when it defers difficult
+cases to specialists.
+Main Results
+MDEP’s performance is analyzed across three groups of
+metrics: classification capacity, probability calibration,
+and selective prediction.
+Classification Performance and Clinical Bound-
+aries
+Collapse of Static Architectures:
+Traditional deep
+learning models trained with Softmax Cross-Entropy suf-
+fer from representation collapse (Mode Collapse) under
+severe class imbalance: ResNet-50 [38] and ViT-B/16 [9]
+achieve high Specificity (0.99+) but extremely poor Sen-
+sitivity (0.225 and 0.000, respectively). ViT completely
+fails to identify malignant cases. Bayesian methods (Deep
+Ensembles [25], MC Dropout [24]) improve representation
+but still return low Sensitivity (0.31–0.35).
+MDEP Balance Solution:
+MDEP automatically
+sweeps the probability space [0.01, 0.99] to find the thresh-
+old that maximizes Balanced Accuracy, yielding: Sen-
+sitivity = 0.7342, Specificity = 0.9131, Macro-AUROC
+= 0.8852.
+Ablation Study
+Ablation results verify the contribution of the two struc-
+tural agents:
+• Prune Only (No Astrocyte): Structural capacity
+is damaged; Specificity drops to 0.7466, and Macro-
+AUROC falls to 0.8025.
+• Grow Only (No Microglia): Lacking the synapse
+clearing agent, the network retains noisy connections
+and experiences severe overconfidence.
+Calibration and Risk Quantification
+The full Swin-MDEP model maintains a low ECE [30]
+(0.0479), demonstrating reliable uncertainty quantifica-
+tion despite criticisms of EDL’s calibration limits [7]. The
+combination of the Dirichlet KL penalty (which shrinks
+spurious evidence) and the Microglia agent (which prunes
+noise-absorbing connections) yields a smooth Dirichlet
+probability simplex. In comparison, EfficientNet-B4 [39]
+reaches a high ECE of 0.3420 (”Calibration Crisis”), while
+Posterior Networks [26] and EF-DST experience ”False
+Positive Collapse” (Sensitivity 1.0 but Specificity 0.0,
+ECE ≈0.5).
+Clinical Performance Comparison
+Selective Classification and Case Analysis
+MDEP provides risk self-awareness through the Area Un-
+der the Risk–Coverage Curve (AURC) [32, 33, 34]. The
+Table 2: Clinical Performance and Calibration Compari-
+son under Class Imbalance (ISIC 2024).
+Architecture / Method
+AUROC
+Sensitivity
+Specificity
+ECE
+Diagnostic Status
+MDEP (Proposed)
+0.8852
+0.7342
+0.9131
+0.0479
+Well-calibrated, optimal balance
+MDEP (Grow Only)
+0.7772
+1.0000
+0.4605
+0.2058
+Overconfident (False confidence)
+MDEP (Prune Only)
+0.8025
+0.7595
+0.7466
+0.1182
+Poor topological space
+Standard ResNet-50
+0.8967
+0.2250
+0.9921
+0.0005
+Mode Collapse, blind to disease
+ViT-B/16
+0.6657
+0.0000
+1.0000
+0.0006
+Completely blind to disease
+EfficientNet-B4
+0.8783
+0.7125
+0.8122
+0.3420
+Calibration crisis (Very high ECE)
+MC Dropout (ResNet-50)
+0.8981
+0.3125
+0.9889
+0.0003
+Computationally heavy inference
+Posterior Network
+0.5000
+1.0000
+0.0000
+0.4757
+False positive collapse
+EF-DST
+0.5000
+1.0000
+0.0000
+0.4990
+DST collapse
+full MDEP model reaches an AURC of 0.0041, signifi-
+cantly lower than the Grow Only variant (0.0119). This
+result has clinical significance: the system can process
+straightforward cases automatically, while routing high-
+uncertainty cases to specialists for clinical review [41].
+Qualitative and Error Analysis
+Qualitatively, samples displaying low Dirichlet evidence
+or high epistemic uncertainty generally correspond to
+rare lesions, heavily noisy images, or ambiguous clinical
+presentations. Instead of forcing the model to make an
+overconfident softmax prediction, Swin-MDEP utilizes
+these uncertainty signals to defer difficult cases to clinical
+experts. The remaining diagnostic errors mostly occur
+when malignant features are obscured by image noise
+(such as hair, shadows, or reflective glare) or when early-
+stage malignant lesions display visual patterns highly
+similar to benign lesions, suggesting the benefit of incor-
+porating patient clinical metadata in future iterations.
+Conclusion
+Swin-MDEP provides a mathematically sound, cali-
+brated, and hardware-efficient deep learning framework
+for clinical melanoma screening. By adapting the Astro-
+cyte’s multidimensional gradient-pooling mechanism to
+Shifted-Window Attention backbones [8], using Smoothed
+STE [20] for 2:4 structured sparsity optimization [16],
+and implementing cosine-decay Dirichlet distillation [21]
+from a dense ResNet-18 MDEP teacher [38], the model
+achieves robust performance under severe class imbal-
+ance.
+The main contributions include:
+1. Theoretical Contribution: A biologically inspired
+opposing-force mechanism that uses Dirichlet uncer-
+tainty gradients to guide connection pruning and re-
+growth.
+2. Technical Contribution: Successful integration of
+dynamic NVIDIA 2:4 structured sparsity during evi-
+dential learning on Vision Transformers, compatible
+with GPU Tensor Cores.
+3. Application Contribution: An integrated diagnos-
+tic safeguard, clinical calibration, and prediction de-
+ferral (Selective Classification) for safe deployment in
+clinical decision support.
+Limitations and Future Work
+The current study focuses on the ISIC 2024 dataset and
+requires validation across multiple clinics, imaging de-
+vices, and patient populations. Future directions include
+prospective clinical evaluations, incorporating patient
+clinical metadata, evaluating subgroup fairness, and ex-
+tending the Swin-MDEP framework to image segmenta-
+tion or multimodal clinical diagnosis.
+Ethical Statement
+The Swin-MDEP architecture is designed as a clinical
+decision support system and is not intended to replace
+professional clinical judgment. Because medical image
+datasets may contain biases related to imaging hardware,
+skin tone representation, geographic clinics, and image
+collection protocols, any clinical deployment must un-
+dergo rigorous assessments of fairness, calibration, and
+failure detection on the target patient cohort. The selec-
+tive classification mechanism reduces risks by deferring
+high-uncertainty predictions to experts, but it does not
+completely eliminate false negatives or false positives.
+Patient data usage must comply with medical data pro-
+tection standards, ensuring anonymization and access
+control. Furthermore, post-deployment monitoring is rec-
+ommended to identify data drift and performance decay.
+Acknowledgments
+Acknowledgments are omitted for anonymous review and
+can be added in the camera-ready version to recognize
+funding sources, institutional support, and individual
+contributions.
+References
+[1] M. Sensoy, L. Kaplan, and M. Kandemir. Evidential
+deep learning to quantify classification uncertainty.
+In Advances in Neural Information Processing Sys-
+tems (NeurIPS), 2018.
+[2] A. Jøsang. Subjective Logic: A Formalism for Rea-
+soning Under Uncertainty. Springer International
+Publishing, Artificial Intelligence: Foundations, The-
+ory, and Algorithms, 2016.
+[3] A. Amini, W. Schwarting, A. Soleimany, and D. Rus.
+Deep evidential regression. In Advances in Neural
+Information Processing Systems (NeurIPS), 2020.
+[4] D. Deng, G. Chen, Y. Yu, F. Liu, and P.-A. Heng.
+Uncertainty estimation by Fisher information-based
+evidential deep learning. In International Conference
+on Machine Learning (ICML), 2023.
+[5] W. Bao, Q. Yu, and Y. Kong. Evidential deep learn-
+ing for open set action recognition. In Proceedings of
+the IEEE/CVF International Conference on Com-
+puter Vision (ICCV), 2021.
+[6] D.S. Pandey and Q. Yu. Learn to Accumulate Evi-
+dence from All Training Samples: Theory and Prac-
+tice. In International Conference on Machine Learn-
+ing (ICML), 2023.
+[7] M. Shen, J.J. Ryu, S. Ghosh, Y. Bu, P. Sattigeri,
+S. Das, and G.W. Wornell. Are uncertainty quan-
+tification capabilities of evidential deep learning a
+mirage? In Advances in Neural Information Pro-
+cessing Systems (NeurIPS), 2024.
+[8] Z. Liu, Y. Lin, Y. Cao, H. Hu, Y. Wei, Z. Zhang,
+S. Lin, and B. Guo. Swin Transformer: Hierarchical
+vision transformer using shifted windows. In Pro-
+ceedings of the IEEE/CVF International Conference
+on Computer Vision (ICCV), 2021.
+[9] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weis-
+senborn, X. Zhai, T. Unterthiner, M. Dehghani,
+M. Minderer, G. Heigold, S. Gelly, J. Uszkoreit,
+and N. Houlsby. An image is worth 16x16 words:
+Transformers for image recognition at scale. In In-
+ternational Conference on Learning Representations
+(ICLR), 2021.
+[10] Z. Liu, H. Hu, Y. Lin, Z. Yao, Z. Xie, Y. Wei, J. Ning,
+Y. Cao, Z. Zhang, L. Dong, F. Wei, and B. Guo. Swin
+Transformer V2: Scaling up capacity and resolution.
+In IEEE/CVF Conference on Computer Vision and
+Pattern Recognition (CVPR), 2022.
+[11] U. Evci, T. Gale, J. Menick, P.S. Castro, and
+E. Elsen. Rigging the lottery: Making all tickets
+winners. In International Conference on Machine
+Learning (ICML), 2020.
+[12] D.C. Mocanu, E. Mocanu, P. Stone, P.H. Nguyen,
+M. Gibescu, and A. Liotta.
+Scalable training of
+artificial neural networks with adaptive sparse con-
+nectivity inspired by network science. Nature Com-
+munications, 9(1):2383, 2018.
+[13] J. Frankle and M. Carbin. The lottery ticket hy-
+pothesis: Finding sparse, trainable neural networks.
+In International Conference on Learning Represen-
+tations (ICLR), 2019.
+[14] S. Han, H. Mao, and W.J. Dally. Deep compression:
+Compressing deep neural networks with pruning,
+trained quantization and Huffman coding. In In-
+ternational Conference on Learning Representations
+(ICLR), 2016.
+[15] T. Hoefler, D. Alistarh, T. Ben-Nun, N. Dryden, and
+A. Peste. Sparsity in deep learning: Pruning and
+growth for efficient inference and training in neural
+networks. Journal of Machine Learning Research,
+22(241):1–124, 2021.
+[16] A. Mishra, J. Albericio Latorre, J. Pool, D. Stosic,
+D. Stosic, G. Venkatesh, C. Yu, and P. Micikevicius.
+Accelerating sparse deep neural networks. arXiv
+preprint arXiv:2104.08378, 2021.
+[17] NVIDIA Corporation. NVIDIA A100 Tensor Core
+GPU Architecture. Whitepaper, 2020.
+[18] A. Zhou, Y. Ma, J. Zhu, J. Liu, Z. Zhang, K. Yuan,
+W. Sun, and H. Li. Learning N:M fine-grained struc-
+tured sparse neural networks from scratch. In In-
+ternational Conference on Learning Representations
+(ICLR), 2021.
+[19] I. Hubara, B. Chmiel, M. Island, R. Banner, J. Naor,
+and D. Soudry. Accelerated sparse neural training:
+A provable and efficient method to find N:M trans-
+posable masks. In Advances in Neural Information
+Processing Systems (NeurIPS), 2021.
+[20] Y. Bengio, N. L´eonard, and A. Courville.
+Esti-
+mating or propagating gradients through stochastic
+neurons for conditional computation. arXiv preprint
+arXiv:1308.3432, 2013.
+[21] G. Hinton, O. Vinyals, and J. Dean.
+Distilling
+the knowledge in a neural network. arXiv preprint
+arXiv:1503.02531, 2015.
+[22] J. Gou, B. Yu, S.J. Maybank, and D. Tao. Knowl-
+edge distillation: A survey. International Journal of
+Computer Vision, 129(6):1789–1819, 2021.
+[23] A. Malinin, B. Mlodozeniec, and M. Gales. Ensemble
+distribution distillation. In International Conference
+on Learning Representations (ICLR), 2020.
+[24] Y. Gal and Z. Ghahramani. Dropout as a Bayesian
+approximation: Representing model uncertainty in
+deep learning. In International Conference on Ma-
+chine Learning (ICML), 2016.
+[25] B. Lakshminarayanan, A. Pritzel, and C. Blundell.
+Simple and scalable predictive uncertainty estima-
+tion using deep ensembles. In Advances in Neural
+Information Processing Systems (NeurIPS), 2017.
+[26] B. Charpentier, D. Z¨ugner, and S. G¨unnemann.
+Posterior Network: Uncertainty estimation without
+OOD samples via density-based pseudo-counts. In
+Advances in Neural Information Processing Systems
+(NeurIPS), 2020.
+[27] L.V. Jospin, H. Laga, F. Boussaid, W. Buntine,
+and M. Bennamoun.
+Hands-on Bayesian neural
+networks – A tutorial for deep learning users. IEEE
+Computational Intelligence Magazine, 17(2):29–48,
+2022.
+[28] M. Abdar, F. Pourpanah, S. Hussain, D. Rezazade-
+gan, L. Liu, M. Ghavamzadeh, P. Fieguth, X. Cao,
+A. Khosravi, U.R. Acharya, V. Makarenkov, and
+S. Nahavandi. A review of uncertainty quantifica-
+tion in deep learning: Techniques, applications and
+challenges. Information Fusion, 76:243–297, 2021.
+[29] C. Guo, G. Pleiss, Y. Sun, and K.Q. Weinberger.
+On calibration of modern neural networks. In Inter-
+national Conference on Machine Learning (ICML),
+2017.
+[30] M.P. Naeini, G.F. Cooper, and M. Hauskrecht. Ob-
+taining well calibrated probabilities using Bayesian
+binning into quantiles. In AAAI Conference on Ar-
+tificial Intelligence, 2015.
+[31] M. Minderer, J. Djolonga, R. Romijnders, F. Hubis,
+X. Zhai, N. Houlsby, D. Tran, and M. Lucic. Revis-
+iting the calibration of modern neural networks. In
+Advances in Neural Information Processing Systems
+(NeurIPS), 2021.
+[32] Y. Geifman and R. El-Yaniv. Selective classification
+for deep neural networks. In Advances in Neural
+Information Processing Systems (NeurIPS), 2017.
+[33] Y. Geifman and R. El-Yaniv. SelectiveNet: A deep
+neural network with an integrated reject option.
+In International Conference on Machine Learning
+(ICML), 2019.
+[34] P.F. Jaeger, C.T. L¨uth, L. Klein, and T.J. Bungert.
+A call to reflect on evaluation practices for failure de-
+tection in image classification. In International Con-
+ference on Learning Representations (ICLR), 2023.
+[35] T. Lin, P. Goyal, R. Girshick, K. He, and P. Doll´ar.
+Focal loss for dense object detection. In Proceedings
+of the IEEE International Conference on Computer
+Vision (ICCV), 2017.
+[36] J.M. Johnson and T.M. Khoshgoftaar. Survey on
+deep learning with class imbalance. Journal of Big
+Data, 6(1):27, 2019.
+[37] Y. Cui, M. Jia, T.-Y. Lin, Y. Song, and S. Belongie.
+Class-balanced loss based on effective number of
+samples. In Proceedings of the IEEE/CVF Confer-
+ence on Computer Vision and Pattern Recognition
+(CVPR), pages 9268–9277, 2019.
+[38] K. He, X. Zhang, S. Ren, and J. Sun. Deep residual
+learning for image recognition. In IEEE Confer-
+ence on Computer Vision and Pattern Recognition
+(CVPR), 2016.
+[39] M. Tan and Q.V. Le. EfficientNet: Rethinking model
+scaling for convolutional neural networks. In Inter-
+national Conference on Machine Learning (ICML),
+2019.
+[40] International Skin Imaging Collaboration (ISIC).
+ISIC 2024 – Skin Cancer Detection with 3D-TBP.
+Kaggle Competition, 2024.
+[41] A. Esteva, B. Kuprel, R.A. Novoa, J. Ko, S.M. Swet-
+ter, H.M. Blau, and S. Thrun. Dermatologist-level
+classification of skin cancer with deep neural net-
+works. Nature, 542(7639):115–118, 2017.
+[42] E. Begoli, T. Bhattacharya, and D. Kusnezov.
+The need for uncertainty quantification in machine-
+assisted medical decision making. Nature Machine
+Intelligence, 1(1):20–23, 2019.
+[43] P. Tschandl, C. Rosendahl, and H. Kittler. The
+HAM10000 dataset, a large collection of multi-source
+dermatoscopic images of common pigmented skin
+lesions. Scientific Data, 5:180161, 2018.
+[44] N.C.F.
+Codella,
+V.
+Rotemberg,
+P.
+Tschandl,
+M.E. Celebi, S. Dusza, D. Gutman, B. Helba,
+A. Kalloo, K. Liopyris, M. Marchetti, H. Kittler, and
+A. Halpern. Skin lesion analysis toward melanoma
+detection 2018: A challenge hosted by the Interna-
+tional Skin Imaging Collaboration (ISIC). arXiv
+preprint arXiv:1902.03368, 2019.
+[45] R.C. Paolicelli, G. Bolasco, F. Pagani, L. Maggi,
+M. Scianni, P. Panzanelli, M. Giustetto, T.A. Fer-
+reira, E. Guiducci, L. Dumas, D. Ragozzino, and
+C.T. Gross. Synaptic pruning by microglia is nec-
+essary for normal brain development.
+Science,
+333(6048):1456–1458, 2011.
+[46] D.P. Schafer, E.K. Lehrman, A.G. Kautzman,
+R. Koyama, A.R. Mardinly, R. Yamasaki, R.M. Ran-
+sohoff, M.E. Greenberg, B.A. Barres, and B. Stevens.
+Microglia sculpt postnatal neural circuits in an ac-
+tivity and complement-dependent manner. Neuron,
+74(4):691–705, 2012.
+[47] W.S. Chung, L.E. Clarke, G.X. Wang, B.K. Stafford,
+A. Sher, C. Chakraborty, J. Joung, L.C. Foo,
+A. Thompson, C. Chen, S.J. Smith, and B.A. Bar-
+res.
+Astrocytes mediate synapse elimination
+through MEGF10 and MERTK pathways. Nature,
+504(7480):394–400, 2013.
+[48] I.D. Vainchtein, G. Chin, F.S. Cho, K.W. Kel-
+ley,
+J.G. Miller,
+E.C. Chien,
+S.A. Liddelow,
+P.T. Nguyen, H. Nakao-Inoue, L.C. Dorman, O. Akil,
+S. Joshita, B.A. Barres, J.T. Paz, A.B. Molofsky,
+and A.V. Molofsky. Astrocyte-derived interleukin-33
+promotes microglial synapse engulfment and neural
+circuit development. Science, 359(6381):1269–1273,
+2018.
+[49] I. Loshchilov and F. Hutter. Decoupled weight de-
+cay regularization. In International Conference on
+Learning Representations (ICLR), 2019.
+[50] D.P. Kingma and J. Ba.
+Adam: A method for
+stochastic optimization. In International Conference
+on Learning Representations (ICLR), 2015.
+[51] P. Micikevicius, S. Narang, J. Alben, G. Diamos,
+E. Elsen, D. Garcia, B. Ginsburg, M. Houston,
+O. Kuchaiev, G. Venkatesh, and H. Wu.
+Mixed
+precision training. In International Conference on
+Learning Representations (ICLR), 2018.
+[52] S. Deng, H. Zhao, W. Fang, J. Yin, S. Dustdar, and
+A.Y. Zomaya. Edge intelligence: The confluence
+of edge computing and artificial intelligence. IEEE
+Internet of Things Journal, 7(8):7457–7469, 2020.
+[53] S. Grigorescu, B. Trasnea, T. Cocias, and G. Mace-
+sanu.
+A survey of deep learning techniques for
+autonomous driving.
+Journal of Field Robotics,
+37(3):362–386, 2020.

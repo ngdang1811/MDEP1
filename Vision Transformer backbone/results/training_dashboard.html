@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swin-MDEP Training Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0e1a;
+            color: #e0e6f0;
+            min-height: 100vh;
+            padding: 24px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            text-align: center;
+            color: #8892a8;
+            font-size: 0.85rem;
+            margin-bottom: 28px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .card {
+            background: linear-gradient(145deg, #111827, #1a2035);
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+        .card:nth-child(1)::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .card:nth-child(2)::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+        .card:nth-child(3)::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .card:nth-child(4)::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .card:nth-child(5)::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+        .card:nth-child(6)::before { background: linear-gradient(90deg, #ec4899, #f472b6); }
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .card canvas { width: 100% !important; height: 260px !important; }
+        .card.full-width { grid-column: 1 / -1; }
+        .card.full-width canvas { height: 320px !important; }
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 14px;
+            max-width: 1400px;
+            margin: 0 auto 24px;
+        }
+        .kpi {
+            background: linear-gradient(145deg, #111827, #1a2035);
+            border: 1px solid #1e293b;
+            border-radius: 14px;
+            padding: 16px;
+            text-align: center;
+        }
+        .kpi-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .kpi-label {
+            font-size: 0.7rem;
+            color: #8892a8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .kpi-delta {
+            font-size: 0.7rem;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        .up { color: #34d399; }
+        .down { color: #f87171; }
+        .kpi:nth-child(1) .kpi-value { color: #60a5fa; }
+        .kpi:nth-child(2) .kpi-value { color: #a78bfa; }
+        .kpi:nth-child(3) .kpi-value { color: #34d399; }
+        .kpi:nth-child(4) .kpi-value { color: #fbbf24; }
+        .kpi:nth-child(5) .kpi-value { color: #f472b6; }
+        .phase-bar {
+            max-width: 1400px;
+            margin: 0 auto 20px;
+            display: flex;
+            height: 28px;
+            border-radius: 8px;
+            overflow: hidden;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+        .phase-bar .warmup {
+            flex: 5;
+            background: linear-gradient(90deg, #1e3a5f, #2563eb40);
+            display: flex; align-items: center; justify-content: center;
+            color: #60a5fa;
+            border: 1px solid #2563eb50;
+        }
+        .phase-bar .mdep {
+            flex: 15;
+            background: linear-gradient(90deg, #3b1f5e40, #7c3aed30);
+            display: flex; align-items: center; justify-content: center;
+            color: #a78bfa;
+            border: 1px solid #7c3aed50;
+        }
+    </style>
+</head>
+<body>
+    <h1>Swin-MDEP Training Dashboard</h1>
+    <p class="subtitle">ISIC 2024 Skin Cancer Detection &mdash; 20 Epochs &mdash; Swin-T + MDEP 2:4 Structured Sparsity + EDL + KD</p>
+
+    <div class="phase-bar">
+        <div class="warmup">WARM-UP (Dense) &mdash; Epoch 1-5</div>
+        <div class="mdep">MDEP 2:4 Active Sparsity &mdash; Epoch 6-20</div>
+    </div>
+
+    <div class="kpi-row" id="kpi-row">
+        <div class="kpi">
+            <div class="kpi-value">0.8698</div>
+            <div class="kpi-label">Macro-AUROC (Best)</div>
+            <div class="kpi-delta up">+0.1874 vs Ep.1</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-value">0.7966</div>
+            <div class="kpi-label">pAUC @20% FPR</div>
+            <div class="kpi-delta up">+0.1747 vs Ep.1</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-value">81.01%</div>
+            <div class="kpi-label">Sensitivity (Opt.)</div>
+            <div class="kpi-delta up">+81.01pp vs Ep.1</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-value">81.02%</div>
+            <div class="kpi-label">Balanced Acc (Opt.)</div>
+            <div class="kpi-delta up">+28.79pp vs Ep.1</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-value">0.3187</div>
+            <div class="kpi-label">Minority-ECE</div>
+            <div class="kpi-delta up">-0.4900 vs Ep.1</div>
+        </div>
+    </div>
+
+    <div class="grid">
+        <div class="card full-width">
+            <div class="card-title">Discrimination: Macro-AUROC & pAUC (@20% FPR)</div>
+            <canvas id="chart-auroc"></canvas>
+        </div>
+        <div class="card">
+            <div class="card-title">Training Loss & Distillation Loss</div>
+            <canvas id="chart-loss"></canvas>
+        </div>
+        <div class="card">
+            <div class="card-title">Sensitivity & Specificity (Optimized Threshold)</div>
+            <canvas id="chart-sens-spec"></canvas>
+        </div>
+        <div class="card">
+            <div class="card-title">Uncertainty Decomposition (Epistemic vs Aleatoric)</div>
+            <canvas id="chart-uncertainty"></canvas>
+        </div>
+        <div class="card">
+            <div class="card-title">Calibration: ECE, Minority-ECE & Brier Score</div>
+            <canvas id="chart-calibration"></canvas>
+        </div>
+        <div class="card full-width">
+            <div class="card-title">MDEP Dynamics: Gamma (Sharpness), Alpha_d (Distill Weight) & Flop Rate</div>
+            <canvas id="chart-mdep"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const epochs = Array.from({length: 20}, (_, i) => i + 1);
+
+        const data = {
+            auroc:     [0.6824,0.8186,0.7995,0.7930,0.8105,0.7863,0.7753,0.7664,0.8018,0.7831,0.7802,0.7984,0.7979,0.8099,0.7808,0.8222,0.8369,0.8398,0.8463,0.8698],
+            pauc:      [0.6219,0.7539,0.7346,0.7062,0.7217,0.7044,0.7067,0.6967,0.7035,0.6827,0.6661,0.6965,0.6866,0.7082,0.6708,0.7304,0.7426,0.7555,0.7581,0.7966],
+            loss:      [2.6128,1.7532,1.3046,1.2658,0.9890,1.0601,0.9433,0.6908,0.6502,0.6910,0.5713,0.4612,0.5434,0.4109,0.3564,0.3933,0.3606,0.3296,0.3746,0.3023],
+            distill:   [4.7846,3.7103,1.1580,3.6828,1.0233,0.7316,3.8508,0.1140,0.0664,0.2281,0.0651,0.1349,1.5837,0.0433,0.0199,1.0618,0.5196,0.0795,6.0528,0.2553],
+            sens_opt:  [1.0000,0.6835,0.6203,0.6709,0.7215,0.6835,0.7089,0.6835,0.7215,0.7089,0.7468,0.7595,0.7595,0.7722,0.7722,0.7722,0.8481,0.7722,0.7975,0.8101],
+            spec_opt:  [0.0447,0.8442,0.8660,0.8090,0.7976,0.7923,0.7809,0.7866,0.7785,0.7652,0.7277,0.7519,0.7312,0.7368,0.7103,0.7890,0.7297,0.7896,0.7942,0.8103],
+            balacc_opt:[0.5223,0.7639,0.7431,0.7400,0.7595,0.7379,0.7449,0.7351,0.7500,0.7370,0.7373,0.7557,0.7453,0.7545,0.7412,0.7806,0.7889,0.7809,0.7958,0.8102],
+            ue:        [0.3168,0.2186,0.1862,0.1644,0.1489,0.1394,0.1305,0.1241,0.1181,0.1135,0.1109,0.1087,0.1065,0.1053,0.1058,0.1070,0.1121,0.1235,0.1259,0.1411],
+            ua:        [0.4189,0.3479,0.3365,0.3713,0.3227,0.3320,0.3104,0.2998,0.3099,0.3111,0.3234,0.2942,0.3189,0.3065,0.3016,0.2893,0.2921,0.3189,0.2831,0.3168],
+            ece:       [0.1898,0.1372,0.1334,0.1628,0.1225,0.1335,0.1154,0.1127,0.1190,0.1257,0.1190,0.0925,0.1202,0.1190,0.0895,0.0956,0.1072,0.1266,0.1064,0.1175],
+            min_ece:   [0.8087,0.7513,0.5727,0.5509,0.5421,0.5350,0.4804,0.5598,0.5300,0.5488,0.5325,0.5231,0.4581,0.5182,0.4684,0.4891,0.4826,0.4095,0.4411,0.3187],
+            brier:     [0.0370,0.0215,0.0258,0.0415,0.0310,0.0337,0.0322,0.0302,0.0340,0.0347,0.0424,0.0357,0.0404,0.0379,0.0426,0.0339,0.0324,0.0410,0.0282,0.0406],
+            gamma:     [5.000,5.000,5.000,5.000,5.000,5.000,4.947,4.790,4.537,4.198,3.787,3.324,2.828,2.322,1.826,1.363,0.952,0.613,0.360,0.203],
+            alpha_d:   [0.500,0.500,0.500,0.500,0.500,0.500,0.495,0.481,0.457,0.426,0.388,0.345,0.299,0.251,0.205,0.163,0.124,0.093,0.069,0.055],
+            flop:      [0.000,0.000,0.000,0.000,0.000,0.003,0.004,0.006,0.008,0.010,0.012,0.013,0.014,0.016,0.018,0.019,0.020,0.022,0.024,0.025],
+        };
+
+        const baseOpts = (yTitle, yMin, yMax) => ({
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { labels: { color: '#94a3b8', font: { family: 'Inter', size: 11 }, usePointStyle: true, pointStyle: 'circle', padding: 16 } },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    titleColor: '#e0e6f0',
+                    bodyColor: '#cbd5e1',
+                    borderColor: '#334155',
+                    borderWidth: 1,
+                    padding: 10,
+                    titleFont: { family: 'Inter', weight: '600' },
+                    bodyFont: { family: 'Inter' },
+                    callbacks: { title: (items) => `Epoch ${items[0].label}` }
+                }
+            },
+            scales: {
+                x: { title: { display: true, text: 'Epoch', color: '#64748b', font: { family: 'Inter', size: 11 } }, ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } },
+                y: { title: { display: true, text: yTitle, color: '#64748b', font: { family: 'Inter', size: 11 } }, ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' }, min: yMin, max: yMax }
+            },
+            elements: { point: { radius: 3, hoverRadius: 6 }, line: { tension: 0.3, borderWidth: 2.5 } },
+            animation: { duration: 1200, easing: 'easeInOutQuart' }
+        });
+
+        const mkDs = (label, d, color, dash) => ({
+            label, data: d, borderColor: color, backgroundColor: color + '18',
+            fill: false, borderDash: dash || [], pointBackgroundColor: color
+        });
+
+        // 1. AUROC & pAUC
+        new Chart(document.getElementById('chart-auroc'), {
+            type: 'line',
+            data: {
+                labels: epochs,
+                datasets: [
+                    mkDs('Macro-AUROC', data.auroc, '#3b82f6'),
+                    mkDs('pAUC (@20% FPR)', data.pauc, '#a78bfa'),
+                    mkDs('Balanced Acc (Opt.)', data.balacc_opt, '#34d399', [5,3]),
+                ]
+            },
+            options: baseOpts('Score', 0.50, 0.90)
+        });
+
+        // 2. Loss
+        new Chart(document.getElementById('chart-loss'), {
+            type: 'line',
+            data: {
+                labels: epochs,
+                datasets: [
+                    mkDs('Train Loss', data.loss, '#f59e0b'),
+                    mkDs('Distill Loss (last batch)', data.distill, '#ef4444', [4,3]),
+                ]
+            },
+            options: baseOpts('Loss', 0, 7)
+        });
+
+        // 3. Sensitivity & Specificity
+        new Chart(document.getElementById('chart-sens-spec'), {
+            type: 'line',
+            data: {
+                labels: epochs,
+                datasets: [
+                    mkDs('Sensitivity (Opt.)', data.sens_opt, '#10b981'),
+                    mkDs('Specificity (Opt.)', data.spec_opt, '#06b6d4'),
+                ]
+            },
+            options: baseOpts('Rate', 0.0, 1.05)
+        });
+
+        // 4. Uncertainty
+        new Chart(document.getElementById('chart-uncertainty'), {
+            type: 'line',
+            data: {
+                labels: epochs,
+                datasets: [
+                    mkDs('Epistemic u_e', data.ue, '#f472b6'),
+                    mkDs('Aleatoric u_a', data.ua, '#fb923c'),
+                ]
+            },
+            options: baseOpts('Uncertainty', 0.05, 0.45)
+        });
+
+        // 5. Calibration
+        new Chart(document.getElementById('chart-calibration'), {
+            type: 'line',
+            data: {
+                labels: epochs,
+                datasets: [
+                    mkDs('ECE (15 bins)', data.ece, '#22d3ee'),
+                    mkDs('Minority-ECE (cls 1)', data.min_ece, '#f87171'),
+                    mkDs('Brier Score', data.brier, '#a3e635', [4,3]),
+                ]
+            },
+            options: baseOpts('Error', 0.0, 0.85)
+        });
+
+        // 6. MDEP dynamics
+        const mdepOpts = JSON.parse(JSON.stringify(baseOpts('Value', 0, 5.5)));
+        mdepOpts.scales.y2 = {
+            position: 'right',
+            title: { display: true, text: 'Flop Rate (%)', color: '#64748b', font: { family: 'Inter', size: 11 } },
+            ticks: { color: '#64748b', font: { size: 10 } },
+            grid: { drawOnChartArea: false },
+            min: 0, max: 0.03
+        };
+        new Chart(document.getElementById('chart-mdep'), {
+            type: 'line',
+            data: {
+                labels: epochs,
+                datasets: [
+                    mkDs('Gamma (Sharpness)', data.gamma, '#8b5cf6'),
+                    mkDs('Alpha_d (Distill Weight)', data.alpha_d, '#ec4899'),
+                    { ...mkDs('Flop Rate (%)', data.flop, '#34d399', [4,3]), yAxisID: 'y2' },
+                ]
+            },
+            options: mdepOpts
+        });
+    </script>
+</body>
+</html>

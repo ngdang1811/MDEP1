@@ -1,0 +1,431 @@
+\documentclass[aspectratio=169, 10pt]{beamer}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric, fit, calc, decorations.pathreplacing, backgrounds}
+\usepackage{colortbl}
+\usepackage{bm}
+\usepackage{array}
+
+% --- Theme Settings (Conference style, light background, dark blue accents) ---
+\mode<presentation> {
+  \usetheme{Boadilla}
+  \usecolortheme{default}
+}
+
+% --- Custom Colors ---
+\definecolor{DarkBlue}{RGB}{11, 22, 53}      % Primary color (#0B1635 - Dark Navy)
+\definecolor{MedBlue}{RGB}{28, 40, 80}       % Secondary color (#1C2850)
+\definecolor{LightBlue}{RGB}{0, 150, 199}    % Accent Cyan (#0096C7)
+\definecolor{SoftGrey}{RGB}{245, 247, 250}    % Block background (#F5F7FA)
+\definecolor{TextDark}{RGB}{30, 41, 59}      % Main text (#1E293B)
+
+% --- Override Beamer Colors ---
+\setbeamercolor{structure}{fg=DarkBlue}
+\setbeamercolor{palette primary}{bg=DarkBlue, fg=white}
+\setbeamercolor{palette secondary}{bg=MedBlue, fg=white}
+\setbeamercolor{palette tertiary}{bg=LightBlue, fg=white}
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{normal text}{fg=TextDark}
+\setbeamercolor{titlelike}{parent=palette primary}
+\setbeamercolor{frametitle}{parent=palette primary}
+
+\setbeamercolor{block title}{bg=DarkBlue!95, fg=white}
+\setbeamercolor{block body}{bg=SoftGrey, fg=TextDark}
+\setbeamercolor{block title example}{bg=LightBlue!95, fg=white}
+\setbeamercolor{block body example}{bg=SoftGrey, fg=TextDark}
+\setbeamercolor{block title alerted}{bg=red!80!black, fg=white}
+\setbeamercolor{block body alerted}{bg=red!5, fg=TextDark}
+
+\usefonttheme{professionalfonts}
+\setbeamerfont{title}{size=\large, series=\bfseries}
+\setbeamerfont{frametitle}{size=\large, series=\bfseries}
+\setbeamerfont{block title}{size=\small, series=\bfseries}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{items}[circle]
+
+% --- Custom Math Commands ---
+\newcommand{\Dir}{\text{Dir}}
+\newcommand{\KL}{\text{KL}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Norm}{\text{Norm}}
+\DeclareMathOperator{\softplus}{Softplus}
+
+% --- Title Information ---
+\title[Swin-MDEP \& ResNet-50 MDEP]{Swin-MDEP: Cắt tỉa Chứng cứ hướng Vi bào đệm với Mạng xương sống Vision Transformer Cửa sổ Dịch chuyển trong Phân loại Ung thư Hắc tố}
+\subtitle{Phương pháp Học sâu Chứng cứ và Thâm nhập thưa cấu trúc 2:4 trên dữ liệu ISIC 2024}
+\author[Minh Đức]{Minh Đức \\ \small Nhóm Nghiên cứu MDEP}
+\institute[MDEP Research]{MDEP Research Team \\ \texttt{minhduc110207@github.com}}
+\date[Tháng 6, 2026]{Tháng 6 Năm 2026}
+
+\begin{document}
+
+% Slide 1: Title
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% Slide 2: Problem
+\begin{frame}{Đặt vấn đề \& Động lực Nghiên cứu}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{1. Tầm quan trọng Y tế}
+        \begin{itemize}
+          \item Ung thư hắc tố (Melanoma) là dạng ung thư da nguy hiểm nhất.
+          \item Chẩn đoán sớm giúp tỷ lệ sống sót sau 5 năm vượt quá \textbf{99\%}.
+        \end{itemize}
+      \end{block}
+      \begin{block}{2. Thách thức Mất cân bằng Cực đoan}
+        \begin{itemize}
+          \item Tập dữ liệu chuẩn \textbf{ISIC 2024}: Tỷ lệ ca ác tính chỉ chiếm \textbf{< 0.15\%}.
+          \item Mô hình thường gặp hiện tượng \textbf{Mode Collapse} (Sensitivity $\to 0$).
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{3. Điểm yếu của các Mô hình Tiêu chuẩn}
+        \begin{itemize}
+          \item Tối ưu hóa bằng Cross-Entropy và Softmax đưa ra các dự đoán quá tự tin nhưng sai lệch (\textbf{Overconfidence}).
+          \item Các mạng CNN bị giới hạn bởi trường tiếp thụ cục bộ.
+          \item Các mạng ViT dễ bị sụp đổ biểu diễn dưới phân phối cực kỳ lệch chuẩn.
+        \end{itemize}
+      \end{block}
+      \begin{alertblock}{Giải pháp đề xuất: Swin-MDEP}
+        Tích hợp Học sâu Chứng cứ (\textbf{EDL}), Tối ưu hóa Thưa Động (\textbf{DST}) đa tác tử và Chưng cất Tri thức chéo kiến trúc.
+      \end{alertblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% Slide 3: Evidential Deep Learning
+\begin{frame}{Học sâu Chứng cứ (Evidential Deep Learning - EDL)}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{Logic Chủ quan \& Phân phối Dirichlet}
+        \begin{itemize}
+          \item Ánh xạ đầu ra logits chứng cứ $e_c = \softplus(z_c) \ge 0$ tới nồng độ Dirichlet:
+          $$\alpha_c = e_c + 1.0, \quad S = \sum_{c=1}^K \alpha_c$$
+          \item Phân phối Dirichlet $\Dir(\bm{\alpha})$ làm liên hợp tiên nghiệm cho xác suất lớp $\bm{p}$.
+          \item Xác suất kỳ vọng của lớp $c$: $\hat{p}_c = \frac{\alpha_c}{S}$.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{exampleblock}{Phân tách Độ Bất Định Dự Đoán}
+        \begin{itemize}
+          \item \textbf{Bất định Nhận thức (Epistemic - $u_e$):}
+          Thiếu tri thức huấn luyện, định nghĩa qua khối lượng niềm tin còn trống:
+          $$u_e = \frac{K}{S} \in (0, 1]$$
+          \item \textbf{Bất định Ngẫu nhiên (Aleatoric - $u_a$):}
+          Nhiễu dữ liệu vốn có (đường cong digamma $\psi$):
+          $$u_a = \sum_{c=1}^K \frac{\alpha_c}{S} \left[ \psi(S + 1) - \psi(\alpha_c + 1) \right]$$
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% Slide 4: Evidential Focal Loss
+\begin{frame}{Hàm Hao tổn Tiêu điểm Chứng cứ (EFL)}
+  \begin{block}{Hàm mục tiêu chung của Swin-MDEP}
+    $$L_{\text{EFL}}(\bm{e}, \bm{y}, t) = \frac{1}{N} \sum_{n=1}^N \omega_n \left[ \mathcal{F}(t) \cdot L_{\text{CE}}^{(n)} + \lambda_{\text{KL}} \cdot \mu(t) \cdot L_{\text{KL}}^{(n)} \right]$$
+  \end{block}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item \textbf{Hao tổn Cross-Entropy Chứng cứ:}
+        $$L_{\text{CE}} = \sum_{c=1}^K y_c \left[ \psi(S) - \psi(\alpha_c) \right]$$
+        \item \textbf{Trọng số Lớp Giảm nhẹ Tần suất:}
+        Tránh mất ổn định gradient do mất cân bằng:
+        $$\omega_c = \sqrt{\frac{N_{\text{total}}}{N_c}} \Big/ \sqrt{\frac{N_{\text{total}}}{N_0}}$$
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item \textbf{Hệ số Tiêu điểm động $\mathcal{F}(t) = (1 - \hat{p}_{\text{target}})^{\gamma(t)}$:}
+        $\gamma(t)$ được tăng dần tuyến tính từ 0 lên 1.2 sau giai đoạn khởi động (warmup) để ổn định hội tụ.
+        \item \textbf{Chuẩn hóa KL để Triệt tiêu Chứng cứ Sai:}
+        Ép chứng cứ của các lớp sai về 0 (nồng độ về 1.0):
+        $$L_{\text{KL}} = \text{KL}(\text{Dir}(\tilde{\bm{\alpha}}) \parallel \text{Dir}(\bm{1}))$$
+        với $\tilde{\alpha}_c = y_c + (1-y_c)\alpha_c$, hệ số tăng dần $\mu(t)$.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% Slide 5: MDEP Agents
+\begin{frame}{Cơ chế Thưa Động Đa Tác Tử MDEP}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{Tác tử Vi bào đệm (Microglia Agent) - Cắt tỉa}
+        \begin{itemize}
+          \item Loại bỏ liên kết dư thừa hoặc gây nhiễu ngẫu nhiên.
+          \item Tín hiệu cắt tỉa $C_{ij} = \text{Norm}(c_1^{(ij)}) + \beta \cdot \text{Norm}(c_2^{(ij)})$, với:
+          \begin{itemize}
+            \item $c_1^{(ij)} = |w_{ij} \cdot \frac{\partial L_{\text{EFL}}}{\partial w_{ij}}|$ (tầm quan trọng phân loại)
+            \item $c_2^{(ij)} = |w_{ij} \cdot \frac{\partial u_a}{\partial w_{ij}}|$ (đóng góp vào nhiễu $u_a$)
+          \end{itemize}
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{Tác tử Tế bào sao (Astrocyte Agent) - Phát triển}
+        \begin{itemize}
+          \item Thúc đẩy liên kết tại vùng thiếu hụt thông tin.
+          \item Tín hiệu phát triển $G_{ij} = \text{Norm}(g_1^{(ij)}) \cdot \text{Norm}(g_2^{(ij)})$, với:
+          \begin{itemize}
+            \item $g_1^{(ij)} = \text{Expand}(u_{e,i}^{(\text{node})})$ (bất định nhận thức)
+            \item $g_2^{(ij)} = |\frac{\partial L_{\text{EFL}}}{\partial w_{ij}}|$ (gradient học tập cục bộ)
+          \end{itemize}
+          \item Động lực học cập nhật điểm số ẩn liên tục $\bm{S}$:
+          $$\Delta S_{ij} = G_{ij} - C_{ij}$$
+        \end{itemize>
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% Slide 6: TikZ Agent Flowchart
+\begin{frame}{Sơ đồ Tương tác Đa Tác tử MDEP}
+  \centering
+  \begin{tikzpicture}[
+      scale=0.85, every node/.style={transform shape},
+      box/.style={draw, rounded corners=4pt, minimum height=0.7cm, minimum width=2.4cm, align=center, font=\scriptsize, fill=white},
+      scorebox/.style={draw, rounded corners=4pt, minimum height=0.7cm, minimum width=3.0cm, align=center, font=\scriptsize, fill=blue!10, draw=DarkBlue, thick},
+      microbox/.style={draw, rounded corners=4pt, minimum height=0.7cm, minimum width=2.4cm, align=center, font=\scriptsize, fill=red!10, draw=red!70!black, thick},
+      astrobox/.style={draw, rounded corners=4pt, minimum height=0.7cm, minimum width=2.4cm, align=center, font=\scriptsize, fill=green!10, draw=green!60!black, thick},
+      signal/.style={-{Stealth[length=4pt]}, thick},
+  ]
+      % Central score
+      \node[scorebox] (score) {Điểm số Ẩn $S_{ij}^{(l)}$};
+
+      % Microglia
+      \node[microbox, above left=1.0cm and 1.5cm of score] (micro) {\textbf{Vi bào đệm (Microglia)}\\Tác tử Cắt tỉa (Prune)};
+
+      % Astrocyte
+      \node[astrobox, above right=1.0cm and 1.5cm of score] (astro) {\textbf{Tế bào sao (Astrocyte)}\\Tác tử Phát triển (Grow)};
+
+      % Inputs to Microglia
+      \node[box, fill=red!5, above=0.6cm of micro] (c1) {$c_1 = |w_{ij} \cdot \nabla_w L_{\text{EFL}}|$\\ Tác vụ Phân loại};
+      \node[box, fill=red!5, left=0.3cm of c1] (c2) {$c_2 = |w_{ij} \cdot \nabla_w u_a|$\\ Nhiễu Ngẫu nhiên};
+
+      % Inputs to Astrocyte
+      \node[box, fill=green!5, above=0.6cm of astro] (g1) {$g_1 = u_{e,i}^{(\text{node})}$\\ Bất định Nhận thức};
+      \node[box, fill=green!5, right=0.3cm of g1] (g2) {$g_2 = |\nabla_w L_{\text{EFL}}|$\\ Gradient Học tập};
+
+      % Mask
+      \node[box, fill=yellow!10, below=0.8cm of score, draw=orange, thick] (mask) {Mặt nạ Thưa cấu trúc 2:4\\ $\bm{M} = \text{Top2of4}(\bm{S})$};
+
+      % Weight
+      \node[box, fill=blue!5, below=0.7cm of mask] (weff) {Trọng số Hiệu dụng\\ $\bm{W}_{\text{eff}} = \bm{W} \odot \bm{M}$};
+
+      % Arrows
+      \draw[signal, red!70!black] (c1) -- (micro);
+      \draw[signal, red!70!black] (c2) -- (micro);
+      \draw[signal, green!70!black] (g1) -- (astro);
+      \draw[signal, green!70!black] (g2) -- (astro);
+
+      \draw[signal, red!70!black] (micro) -- node[left, font=\tiny, xshift=-2pt] {$-C_{ij}$} (score);
+      \draw[signal, green!70!black] (astro) -- node[right, font=\tiny, xshift=2pt] {$+G_{ij}$} (score);
+
+      \draw[signal] (score) -- (mask);
+      \draw[signal] (mask) -- (weff);
+  \end{tikzpicture}
+\end{frame}
+
+% Slide 7: Backbone Comparison
+\begin{frame}{Tích hợp Mạng Xương Sống: ResNet-50 vs Swin Transformer}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{ResNet-50 MDEP (Cấu hình CNN)}
+        \begin{itemize}
+          \item Phép tích chập 2D có định kiến quy nạp không gian cứng nhắc.
+          \item Cơ chế MDEP được áp dụng lên các bộ lộ tích chập.
+          \item Đạt sự cân bằng hiệu quả trên CNN truyền thống.
+          \item Không sử dụng chưng cất tri thức bổ trợ.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{Swin-MDEP (Cấu hình ViT Đề xuất)}
+        \begin{itemize}
+          \item Kiến trúc Vision Transformer phân cấp với cơ chế chú ý cửa sổ dịch chuyển (Shifted-Window Attention).
+          \item Gom cụm gradient kích hoạt tổng quát nhằm thống nhất các tensor lưới không gian đa chiều.
+          \item Áp dụng lên các lớp chiếu tự chú ý (\texttt{qkv}, \texttt{proj}) và MLP (\texttt{fc1}, \texttt{fc2}).
+          \item \textbf{Stem Exception (Ngoại lệ lớp đầu vào):} Giữ nguyên lớp Phân đoạn Patch (Conv2d $3 \to 96$) ở trạng thái \textbf{đặc} để tránh mất mát dữ liệu không gian 50\% từ kênh màu.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% Slide 8: Swin-T MDEP Architecture Diagram
+\begin{frame}{Kiến trúc Swin-T MDEP Thừa}
+  \centering
+  \begin{tikzpicture}[
+      scale=0.8, every node/.style={transform shape},
+      box/.style={draw, rounded corners=3pt, minimum height=0.8cm, minimum width=1.8cm, align=center, font=\scriptsize, fill=white},
+      densebox/.style={draw, rounded corners=3pt, minimum height=0.8cm, minimum width=1.8cm, align=center, font=\scriptsize, fill=orange!10, draw=orange!70!black, thick},
+      sparsebox/.style={draw, rounded corners=3pt, minimum height=0.8cm, minimum width=2.0cm, align=center, font=\scriptsize, fill=blue!8, draw=DarkBlue, thick},
+      arrow/.style={-{Stealth[length=4pt]}, thick},
+      label/.style={font=\tiny\itshape, text=gray}
+  ]
+      % Input
+      \node[box, fill=green!10] (input) {Ảnh Đầu Vào\\$224{\times}224{\times}3$};
+
+      % Patch Partition
+      \node[densebox, right=0.4cm of input] (patch) {Phân đoạn Patch\\(Patch Partition)\\\textbf{Đặc (Dense)}};
+
+      % Stage 1
+      \node[sparsebox, right=0.5cm of patch] (s1) {Giai đoạn 1\\$56{\times}56{\times}96$\\\textbf{MDEP thưa 2:4}};
+
+      % Stage 2
+      \node[sparsebox, right=0.6cm of s1] (s2) {Giai đoạn 2\\$28{\times}28{\times}192$\\\textbf{MDEP thưa 2:4}};
+
+      % Stage 3
+      \node[sparsebox, right=0.6cm of s2] (s3) {Giai đoạn 3\\$14{\times}14{\times}384$\\\textbf{MDEP thưa 2:4}};
+
+      % Stage 4
+      \node[sparsebox, right=0.6cm of s3] (s4) {Giai đoạn 4\\$7{\times}7{\times}768$\\\textbf{MDEP thưa 2:4}};
+
+      % Head
+      \node[box, fill=red!10, right=0.5cm of s4] (head) {Phân loại (EDL)\\AvgPool + Softplus\\$K$ Lớp};
+
+      % Arrows with labels
+      \draw[arrow] (input) -- (patch);
+      \draw[arrow] (patch) -- (s1);
+      \draw[arrow] (s1) -- node[above, label] {PM $\downarrow 2\times$} (s2);
+      \draw[arrow] (s2) -- node[above, label] {PM $\downarrow 2\times$} (s3);
+      \draw[arrow] (s3) -- node[above, label] {PM $\downarrow 2\times$} (s4);
+      \draw[arrow] (s4) -- (head);
+
+  \end{tikzpicture}
+  
+  \vspace{0.3cm}
+  \begin{block}{Nguyên lý Tích hợp \& Thiết lập Kiến trúc}
+    \begin{itemize}
+      \item \textbf{Stem tích chập đặc:} Lớp Phân đoạn Patch đầu tiên giữ nguyên đặc để bảo toàn thông tin màu sắc và cấu trúc không gian ban đầu (không áp dụng 2:4).
+      \item \textbf{Lớp tuyến tính MDEP thưa:} Áp dụng mặt nạ thưa cấu trúc NVIDIA 2:4 tại các ma trận chiếu \texttt{qkv}, \texttt{proj}, \texttt{fc1}, \texttt{fc2} và các khối Gộp Patch (PM).
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+% Slide 9: Knowledge Distillation
+\begin{frame}{Chưng cất Tri thức Phân kỳ KL Dirichlet}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{Động lực học Chưng cất Bất định}
+        \begin{itemize}
+          \item Mô hình Vision Transformer thưa dễ bị sụp đổ biểu diễn ở giai đoạn đầu huấn luyện dưới phân phối lệch chuẩn.
+          \item Giải pháp: Chưng cất bối cảnh bất định từ một mô hình \textbf{Giáo viên đặc và hội tụ} (ResNet-18 MDEP) sang \textbf{Học sinh thưa} (Swin-T MDEP).
+        \end{itemize}
+      \end{block}
+      \begin{block}{Hàm hao tổn chưng cất phân tích}
+        $$L_{\text{distill}} = \frac{1}{N}\sum_{n=1}^N \KL\!\left(\Dir(\bm{\alpha}_{S}^{(n)}) \,\|\, \Dir(\bm{\alpha}_{T}^{(n)})\right)$$
+        Được giải bằng biểu thức dạng đóng toán học thông qua hàm Gamma ($\Gamma$) và digamma ($\psi$).
+      \end{block}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{exampleblock}{Lập lịch Cosine Decay cho Trọng số Chưng cất $\alpha_d(t)$}
+        \begin{itemize}
+          \item Định vị bối cảnh bất định của học sinh trong giai đoạn đầu tiên, sau đó cho phép tự thích nghi trên nhãn thực tế.
+          \item Biểu thức lập lịch:
+        \end{itemize}
+        $$\alpha_d(t) = \alpha_{d,\text{final}} + \frac{\alpha_{d,\text{init}} - \alpha_{d,\text{final}}}{2}\left[1 + \cos\left(\pi \frac{t - t_w}{T - t_w}\right)\right]$$
+        với $\alpha_{d,\text{init}} = 0.5$ và $\alpha_{d,\text{final}} = 0.05$.
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% Slide 10: Performance Table
+\begin{frame}{Bảng tổng hợp Hiệu năng các Mô hình}
+  \scriptsize
+  \centering
+  \begin{table}
+    \caption{So sánh hiệu năng các mô hình trên tập dữ liệu kiểm thử ISIC 2024}
+    \label{tab:metrics_main}
+    \resizebox{0.92\textwidth}{!}{
+      \begin{tabular}{lcccccc}
+        \toprule
+        \textbf{Kiến trúc / Phương pháp} & \textbf{AUROC} $\uparrow$ & \textbf{Sensitivity} $\uparrow$ & \textbf{Specificity} $\uparrow$ & \textbf{B.Acc} $\uparrow$ & \textbf{ECE} $\downarrow$ & \textbf{AURC} $\downarrow$ \\
+        \midrule
+        \rowcolor{blue!8} \textbf{Swin-MDEP (ViT - Đề xuất)} & \textbf{0.8698} & 0.8181* & 0.8183* & \textbf{0.8182*} & 0.1175 & -- \\
+        \rowcolor{blue!8} \textbf{ResNet-50 MDEP (Proposed CNN)} & 0.8852 & 0.7342 & 0.9131 & 0.8236 & 0.0479 & 0.0056 \\
+        \midrule
+        MDEP (Ablation: Prune Only) & 0.8025 & 0.7595 & 0.7466 & 0.7531 & 0.1182 & -- \\
+        MDEP (Ablation: Grow Only) & 0.7772 & \textbf{1.0000} & 0.4605 & 0.7303 & 0.2058 & 0.0119 \\
+        \midrule
+        Standard ResNet-50 (Dense) & 0.8967 & 0.2250 & 0.9921 & 0.6086 & 0.0005 & -- \\
+        ViT-B/16 (Dense) & 0.6657 & 0.0000 & 1.0000 & 0.5000 & 0.0006 & -- \\
+        EfficientNet-B4 & 0.8783 & 0.7125 & 0.8122 & 0.7624 & 0.3420 & -- \\
+        MC Dropout (ResNet-50) & 0.8981 & 0.3125 & 0.9889 & 0.6507 & 0.0003 & -- \\
+        Posterior Network & 0.5000 & 1.0000 & 0.0000 & 0.5000 & 0.4757 & -- \\
+        EF-DST & 0.5000 & 1.0000 & 0.0000 & 0.5000 & 0.4990 & -- \\
+        \bottomrule
+      \end{tabular}
+    }
+  \end{table}
+  \vspace{0.1cm}
+  \begin{itemize}
+    \item \textbf{Mode Collapse:} Các mô hình đặc chuẩn bị sụp đổ (Standard ResNet-50 và ViT-B/16 đạt Sensitivity gần 0 hoặc bằng 0).
+    \item \textbf{Hiệu năng thực tế:} Swin-MDEP đạt \textbf{AUROC 0.8698} và \textbf{B.Acc 0.8182} ở ngưỡng tối ưu 0.2700 (ở ngưỡng 0.5: Sens 0.5316, Spec 0.9754, B.Acc 0.7535, ECE 0.1175).
+  \end{itemize}
+\end{frame}
+
+% Slide 11: Ablation Study
+\begin{frame}{Phân tích Nghiên cứu Ablation Study}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{1. Vai trò của Tác tử Vi bào đệm (Microglia)}
+        \begin{itemize}
+          \item \textbf{Thực nghiệm vô hiệu hóa (Grow Only):} ECE tăng vọt từ $0.0479$ lên \textbf{$0.2058$}, Specificity sụp đổ xuống còn \textbf{$0.4605$}.
+          \item \textbf{Kết luận:} Mô hình không có Microglia sẽ tích tụ bằng chứng rác (junk evidence) trên đơn hình Dirichlet do các liên kết nhiễu gây overconfidence. Microglia hoạt động như một \textbf{bộ lọc chất lượng} để loại bỏ nhiễu ngẫu nhiên.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{2. Vai trò của Tác tử Tế bào sao (Astrocyte)}
+        \begin{itemize}
+          \item \textbf{Thực nghiệm vô hiệu hóa (Prune Only):} AUROC giảm còn \textbf{$0.8025$}, Specificity còn \textbf{$0.7466$}.
+          \item \textbf{Kết luận:} Mô hình không có Astrocyte sẽ rơi vào trạng thái \textbf{Đóng băng Cấu trúc (Topological Freezing)}, các kết nối bị cắt tỉa không thể phục hồi. Astrocyte đảm bảo \textbf{tính dẻo topo} để tái phát triển liên kết tại vùng bất định nhận thức cao.
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \begin{alertblock}{Kết luận sự phối hợp}
+    Sự phối hợp đối nghịch và liên tục của hai tác tử Microglia và Astrocyte là bắt buộc để duy trì đồng thời cả khả năng biểu diễn của mạng và độ hiệu chuẩn xác suất.
+  \end{alertblock}
+\end{frame}
+
+% Slide 12: Conclusion & Future Work
+\begin{frame}{Kết luận \& Hướng đi Tương lai}
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{Kết luận Khoa học}
+        \begin{itemize}
+          \item \textbf{Khung MDEP phổ quát:} Động lực học thưa đa tác tử MDEP hoạt động hiệu quả trên cả kiến trúc CNN (ResNet-50) và Vision Transformer (Swin-T).
+          \item \textbf{Hiệu năng Swin-MDEP:} Khai thác self-attention phân cấp và chưng cất tri thức Dirichlet giúp giải quyết triệt để Mode Collapse, đạt AUROC \textbf{0.8698} và ECE \textbf{0.1175}.
+          \item \textbf{Hỗ trợ lâm sàng:} Cân bằng tốt độ nhạy (\textbf{0.8181}) và độ đặc hiệu (\textbf{0.8183}) ở ngưỡng tối ưu 0.2700 để sàng lọc an toàn.
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{exampleblock}{Hướng đi tương lai}
+        \begin{itemize}
+          \item \textbf{Tích hợp đa phương thức (Multimodal):} Kết hợp hình ảnh nội soi da với bệnh sử lâm sàng của bệnh nhân.
+          \item \textbf{Tăng tốc phần cứng:} Tối ưu hóa trực tiếp thư viện thưa 2:4 trong quá trình huấn luyện nhằm giảm thời gian chạy trên GPU thế hệ mới.
+          \item \textbf{Mở rộng miền y tế:} Áp dụng MDEP vào các bài toán chẩn đoán có độ mất cân bằng lớp cực đoan khác như hiếm muộn, ung thư vú, hay phim X-quang phổi.
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\end{document}

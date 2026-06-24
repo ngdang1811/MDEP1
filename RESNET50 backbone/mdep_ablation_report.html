@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo cáo Phân tích Ablation Study và Đề xuất Cải tiến Hệ thống MDEP</title>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            line-height: 1.6;
+            color: #000;
+            background-color: #525659; /* typical PDF viewer background */
+            margin: 0;
+            padding: 2rem;
+        }
+        .paper-container {
+            max-width: 8.5in; /* Standard paper width */
+            min-height: 11in;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 1in;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .title-block {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        h1 {
+            font-size: 18pt;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .authors {
+            font-size: 11pt;
+            font-style: italic;
+            margin-bottom: 2rem;
+        }
+        .abstract {
+            font-weight: bold;
+            text-align: justify;
+            margin: 0 0.5in 2rem 0.5in;
+            font-size: 10pt;
+        }
+        .content {
+            text-align: justify;
+            font-size: 10pt;
+        }
+        h2 {
+            font-size: 11pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-align: center;
+            margin-top: 1.5rem;
+            margin-bottom: 0.8rem;
+            break-after: avoid;
+        }
+        h3 {
+            font-size: 10pt;
+            font-weight: bold;
+            font-style: italic;
+            margin-top: 1rem;
+            margin-bottom: 0.4rem;
+            text-align: left;
+            text-indent: 0;
+            break-after: avoid;
+        }
+        p {
+            margin-top: 0;
+            margin-bottom: 0.8rem;
+            text-indent: 0.25in;
+        }
+        .code-block {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 0.5rem;
+            font-size: 8.5pt;
+            white-space: pre-wrap;
+            margin-bottom: 0.8rem;
+            text-indent: 0;
+        }
+        ul, ol {
+            margin-top: 0;
+            margin-bottom: 0.8rem;
+            padding-left: 0.3in;
+            text-indent: 0;
+        }
+        li {
+            margin-bottom: 0.3rem;
+        }
+        .equation {
+            text-align: center;
+            margin: 1rem 0;
+            text-indent: 0;
+        }
+        h2, h3, .code-block, .equation {
+            break-inside: avoid;
+        }
+        .full-width-block {
+            margin: 1.5rem 0;
+            break-inside: avoid;
+        }
+        .metrics-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5pt;
+            margin: 1.5rem 0;
+            border-top: 1.5pt solid #000;
+            border-bottom: 1.5pt solid #000;
+        }
+        .metrics-table th {
+            border-bottom: 1pt solid #000;
+            padding: 6px 8px;
+            font-weight: bold;
+            text-align: center;
+            background: none;
+        }
+        .metrics-table td {
+            padding: 6px 8px;
+            border-bottom: 0.5pt solid #ddd;
+            text-align: center;
+        }
+        .metrics-table tr:last-child td {
+            border-bottom: none;
+        }
+        .left-align {
+            text-align: left !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="paper-container">
+        <div class="title-block">
+            <h1>Nghiên cứu Ablation trên Hệ thống MDEP:<br>Giải mã Cơ chế Tương tác giữa Vi bào đệm (Microglia) và Tế bào sao (Astrocyte) trong Cắt tỉa Thưa Minh chứng</h1>
+            <div class="authors">Báo cáo Phân tích Chuyên sâu và Đề xuất Cải tiến Mô hình</div>
+        </div>
+
+        <div class="abstract">
+            Tóm tắt—Báo cáo này trình bày kết quả phân tích chuyên sâu của thử nghiệm ablation (ablation study) trên hệ thống MDEP (Microglial-Driven Evidential Pruning) nhằm làm rõ vai trò độc lập và tương hỗ của hai tác nhân mô phỏng sinh học: Vi bào đệm (Microglia) chịu trách nhiệm cắt tỉa dựa trên độ quan trọng và độ không chắc chắn ngẫu nhiên, và Tế bào sao (Astrocyte) thúc đẩy mọc bù liên kết tại các vùng có độ không chắc chắn nhận thức cao. Kết quả thực nghiệm trên tập dữ liệu mất cân bằng cực đoan ISIC 2024 chỉ ra rằng việc loại bỏ bất kỳ tác nhân nào cũng gây ra sự suy giảm nghiêm trọng về mặt hiệu năng. Đặc biệt, việc thiếu hụt cơ chế cắt tỉa của Microglia dẫn đến tích tụ "bằng chứng rác" (junk evidence) và hiện tượng tự tin thái quá (overconfidence, ECE vọt lên 0.2058). Ngược lại, việc thiếu cơ chế mọc bù của Astrocyte dẫn đến hiện tượng đóng băng cấu trúc mạng (topological freezing) và suy thoái biên quyết định (Macro AUROC giảm còn 0.8025). Dựa trên các phát hiện này, chúng tôi đề xuất năm hướng cải tiến toán học khả thi nhằm nâng cao hơn nữa hiệu năng và độ ổn định của hệ thống.
+        </div>
+
+        <div class="content">
+            <h2>I. Giới thiệu</h2>
+            <p>Hệ thống Microglial-Driven Evidential Pruning (MDEP) đại diện cho một bước tiến quan trọng trong việc tích hợp lý thuyết Học sâu Minh chứng (Evidential Deep Learning - EDL) với Học thưa Động (Dynamic Sparse Training - DST). Mục tiêu cốt lõi của MDEP là thiết lập một mô hình mạng thần kinh nhân tạo vừa có khả năng định lượng độ không chắc chắn (uncertainty-aware) theo phân phối Dirichlet, vừa tuân thủ nghiêm ngặt các ràng buộc thưa cấu trúc phần cứng (như chuẩn thưa NVIDIA 2:4) nhằm đạt hiệu năng tối ưu trên các thiết bị tăng tốc phần cứng. Hệ thống hoạt động dựa trên cơ chế tương tác đa tác nhân (multi-agent system) mô phỏng hệ thần kinh đệm sinh học, cụ thể là sự phối hợp giữa tác nhân Vi bào đệm (Microglia) và Tế bào sao (Astrocyte).</p>
+            <p>Tuy nhiên, sự tương tác động giữa hai tác nhân này trên một cảnh quan tối ưu hóa phức tạp như phân phối Dirichlet—đặc biệt dưới điều kiện mất cân bằng lớp cực đoan (lớp malignant chỉ chiếm ~0.15% trong tập dữ liệu ISIC 2024)—chưa được làm rõ nếu thiếu đi các thử nghiệm cô lập thành phần (ablation study). Để đánh giá định lượng đóng góp thực tế của từng thành phần, chúng tôi tiến hành phân tích so sánh giữa phiên bản MDEP đầy đủ và hai cấu hình ablation: cấu hình Chỉ Mọc (Ablation: Only Grow) và cấu hình Chỉ Cắt tỉa (Ablation: Prune Only). Báo cáo này mổ xẻ chi tiết các hành vi toán học đằng sau các con số thực nghiệm và đề xuất các giải pháp nâng cấp thế hệ tiếp theo.</p>
+
+            <h2>II. Cấu hình và Phương pháp thực nghiệm Ablation</h2>
+            <p>Quá trình tối ưu hóa topo của MDEP được điều khiển bởi một ma trận điểm số tiềm ẩn (latent scores) \(S_{ij}\) tương ứng với mỗi trọng số $w_{ij}$ trong các lớp tích chập (<code>MDEPConv2d</code>) và lớp tuyến tính (<code>MDEPLinear</code>). Trong tài liệu thiết kế PDF gốc, động lực học của hệ thống được định nghĩa rõ ràng là sự đối địch giữa xung lực tăng trưởng và cắt tỉa:</p>
+            <div class="equation">
+                \[\Delta S_{ij}^{(t)} = \Delta S_{ij, \text{astro}}^{(t)} - \Delta S_{ij, \text{micro}}^{(t)}\]
+            </div>
+            <p>Trong đó, lực kích thích phát triển của Tế bào sao (\(\Delta S_{ij, \text{astro}}^{(t)}\) hay \(G_{ij}\)) hoạt động nhằm tăng điểm số liên kết để thúc đẩy quá trình mọc bù kết nối, còn lực triệt tiêu của Vi bào đệm (\(\Delta S_{ij, \text{micro}}^{(t)}\) hay \(C_{ij}\)) hoạt động nhằm làm giảm điểm số liên kết để thực hiện việc cắt tỉa các kết nối dư thừa hoặc nhiễu. Sự đối kháng giữa hai tác nhân này quyết định hướng tiến hóa của topo mạng. Ba cấu hình thực nghiệm được thiết lập như sau:</p>
+
+            <h3>A. MDEP Đầy đủ (Full MDEP)</h3>
+            <p>Trong cấu hình tiêu chuẩn (tương ứng với mã nguồn trong <a href="file:///d:/MDEP/mdep_notebook.py">mdep_notebook.py</a>), cả hai tác nhân đều hoạt động đồng thời. Cụ thể:</p>
+            <ul>
+                <li><strong>Microglia:</strong> Tính toán xung lực cắt tỉa \(C_{ij}\) (tương ứng với \(\Delta S_{ij, \text{micro}}\)) dựa trên độ quan trọng đối với tác vụ phân loại (\(c_1\)) và vai trò mô hình hóa nhiễu dữ liệu (\(c_2\)):
+                <div class="equation">
+                    \[C_{ij} = \text{MinMax}\left(|w_{ij} \cdot \frac{\partial \mathcal{L}_{EFL}}{\partial w_{ij}}|\right) + \beta \cdot \text{MinMax}\left(|w_{ij} \cdot \frac{\partial u_a}{\partial w_{ij}}|\right)\]
+                </div>
+                với \(\mathcal{L}_{EFL}\) là hàm mất mát Evidential Focal Loss, và \(u_a\) là độ không chắc chắn ngẫu nhiên (aleatoric uncertainty).</li>
+                <li><strong>Astrocyte:</strong> Tính toán xung lực tăng trưởng \(G_{ij}\) (tương ứng với \(\Delta S_{ij, \text{astro}}\)) bằng cách nhân tích chập hoặc nhân trực tiếp giữa độ không chắc chắn nhận thức dạng node (\(u_e^{(node)}\)) và độ lớn gradient trọng số (\(g_2\)):
+                <div class="equation">
+                    \[G_{ij} = \text{MinMax}\left(u_{e, i}^{(node)} \to \text{shape}(w)\right) \odot \text{MinMax}\left(|\frac{\partial \mathcal{L}_{EFL}}{\partial w_{ij}}|\right)\]
+                </div>
+                với \(u_e\) là độ không chắc chắn nhận thức (epistemic uncertainty).</li>
+            </ul>
+
+            <h3>B. Ablation: Only Grow (Chỉ Mọc - Astrocyte-Only)</h3>
+            <p>Cấu hình này (được cài đặt tại <a href="file:///d:/MDEP/mdep_ablation_grow_only.py">mdep_ablation_grow_only.py</a>) vô hiệu hóa hoàn toàn tín hiệu từ tác nhân Microglia bằng cách gán triệt tiêu xung lực cắt tỉa về 0:</p>
+            <div class="code-block"># --- Microglia agent: DISABLED (zeroed out) ---
+C_ij = torch.zeros_like(w_val)</div>
+            <p>Hệ quả là \(\Delta S_{ij} = G_{ij}\). Điểm số liên kết chỉ được điều khiển bởi nhu cầu bù đắp tri thức của các vùng neuron có độ không chắc chắn nhận thức cao và độ lớn gradient tương ứng. Mặc dù chuẩn thưa NVIDIA 2:4 vẫn được áp dụng bắt buộc thông qua hàm <code>generate_2_4_mask(scores)</code>, việc quyết định giữ lại liên kết nào hoàn toàn không có sự định hướng từ độ quan trọng thực tế đối với nhãn mục tiêu (\(c_1\)) hay độ không chắc chắn ngẫu nhiên (\(c_2\)).</p>
+
+            <h3>C. Ablation: Prune Only (Chỉ Cắt tỉa - Microglia-Only)</h3>
+            <p>Cấu hình này (được cài đặt tại <a href="file:///d:/MDEP/mdep_ablation_prune_only.py">mdep_ablation_prune_only.py</a>) vô hiệu hóa hoàn toàn vai trò của Tế bào sao bằng cách gán xung lực mọc bù bằng 0:</p>
+            <div class="code-block"># --- Astrocyte agent: DISABLED (zeroed out) ---
+G_ij = torch.zeros_like(C_ij)</div>
+            <p>Dẫn tới \(\Delta S_{ij} = C_{ij}\). Điểm số tiềm ẩn chỉ được cập nhật dựa trên mức độ quan trọng hiện tại của các trọng số đối với hàm loss phân loại và độ không chắc chắn ngẫu nhiên. Khi một trọng số bị đưa vào trạng thái thưa (mask = 0), nó không còn nhận được bất kỳ xung lực sinh trưởng bù đắp nào từ các khu vực neuron đang thiếu hụt tri thức.</p>
+
+            <h2>III. Kết quả thực nghiệm Ablation</h2>
+            <p>Sau khi tiến hành huấn luyện và đánh giá trên cùng một tập dữ liệu trích xuất từ thử thách ISIC 2024 với các tham số cấu hình đồng nhất (tốc độ học tối đa \(4 \times 10^{-5}\), kẹp gradient 1.0, 20 epoch huấn luyện với 6 epoch dense warmup), kết quả thực nghiệm được ghi nhận chi tiết tại Bảng I.</p>
+
+            <div class="full-width-block">
+                <h3 style="text-align: center; text-transform: uppercase;">Bảng I: Bảng so sánh hiệu năng các cấu hình Ablation Study</h3>
+                <table class="metrics-table">
+                    <thead>
+                        <tr>
+                            <th>Kiến trúc / Phương pháp</th>
+                            <th>Macro AUROC</th>
+                            <th>Sensitivity (Độ nhạy)</th>
+                            <th>Specificity (Độ đặc hiệu)</th>
+                            <th>ECE (Sai số hiệu chuẩn)</th>
+                            <th>Nhóm đối chiếu</th>
+                            <th>Hướng tiếp cận toán học &amp; Trạng thái hệ thống</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="left-align"><strong>MDEP (đề xuất sau tinh chỉnh)</strong></td>
+                            <td><strong>0.8852</strong></td>
+                            <td>0.7342</td>
+                            <td><strong>0.9131</strong></td>
+                            <td><strong>0.0479</strong></td>
+                            <td>MDEP</td>
+                            <td class="left-align">Structural Pruning + Selective Classification; thưa cấu trúc 2:4, cân bằng tối ưu lâm sàng.</td>
+                        </tr>
+                        <tr>
+                            <td class="left-align">MDEP (Ablation: Only Grow)</td>
+                            <td>0.7772</td>
+                            <td><strong>1.0000</strong></td>
+                            <td>0.4605</td>
+                            <td>0.2058</td>
+                            <td>Ablation</td>
+                            <td class="left-align">Không cắt tỉa, tích tụ bằng chứng rác mạnh và gây overconfidence.</td>
+                        </tr>
+                        <tr>
+                            <td class="left-align">MDEP (Ablation: Prune Only)</td>
+                            <td>0.8025</td>
+                            <td>0.7595</td>
+                            <td>0.7466</td>
+                            <td>0.1182</td>
+                            <td>Ablation</td>
+                            <td class="left-align">Không mọc bù, nghèo nàn hóa không gian topo gây hụt biên quyết định và mất chuẩn hóa lớp hiếm.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="content">
+            <h2>IV. Phân tích chuyên sâu về ảnh hưởng của các thành phần</h2>
+            
+            <h3>A. Tác nhân Vi bào đệm (Microglia): Lá chắn ngăn ngừa sự tích tụ bằng chứng rác (Junk Evidence)</h3>
+            <p>Để giải thích hiện tượng sụt giảm nghiêm trọng hiệu năng ở cấu hình <strong>Only Grow</strong> (Macro AUROC giảm từ 0.8852 xuống 0.7772, ECE tăng vọt từ 0.0479 lên 0.2058), chúng ta cần đi sâu vào bản chất toán học của lý thuyết Dirichlet Evidential Deep Learning.</p>
+            <p>Trong EDL, thay vì dự đoán một phân phối xác suất lớp trực tiếp qua hàm Softmax, mô hình dự đoán các tham số tập trung (concentration parameters) \(\alpha_c = e_c + 1.0\) của một phân phối Dirichlet. Tổng lượng bằng chứng tích lũy của hệ thống được định nghĩa là \(S = \sum_{c=1}^K \alpha_c\). Xác suất dự đoán kỳ vọng cho lớp \(c\) là \(\hat{p}_c = \alpha_c / S\). Độ không chắc chắn nhận thức (epistemic uncertainty) tỷ lệ nghịch với tổng lượng bằng chứng: \(u_e = K/S\).</p>
+            <p>Khi tác nhân Microglia bị vô hiệu hóa (\(C_{ij} = 0\)), hệ thống mất đi khả năng đánh giá độ đóng góp của từng liên kết thần kinh đối với thông tin nhãn lớp thực tế (\(c_1\)) và độ nhiễu ngẫu nhiên (\(c_2\)). Lúc này, các liên kết thần kinh được giữ lại hoặc phát sinh mới chỉ dựa vào mong muốn giảm độ bất định nhận thức cục bộ từ Astrocyte. Về mặt tối ưu hóa toán học, điều này mở đường cho các liên kết truyền dẫn nhiễu hoạt động tự do. Trong các mạng neuron sâu thông thường, nhiễu có thể được triệt tiêu ở lớp cuối nhờ cơ chế chuẩn hóa của Softmax. Tuy nhiên, trong EDL, mọi kích hoạt pre-activation dương đi qua lớp <code>Softplus</code> đều được diễn giải trực tiếp thành <strong>bằng chứng (evidence)</strong> thực chứng.</p>
+            <p>Hệ quả là, các liên kết nhiễu tích tụ một lượng lớn bằng chứng giả tạo—hay còn gọi là <strong>bằng chứng rác (junk evidence)</strong>. Khi tổng lượng bằng chứng \(S\) bị thổi phồng một cách giả tạo do bằng chứng rác tích tụ chéo giữa các kênh truyền dẫn, độ bất định nhận thức \(u_e = K/S\) giả định sẽ hội tụ về gần 0, tạo ra ảo tưởng rằng mạng cực kỳ tự tin vào quyết định của mình. Tuy nhiên, phân phối Dirichlet thực tế bị bóp méo nghiêm trọng. Đây chính là nguyên nhân trực tiếp khiến sai số hiệu chuẩn ECE vọt lên mức thảm họa <strong>0.2058</strong> (gấp hơn 4.2 lần so với bản đầy đủ).</p>
+            <p>Hơn nữa, sự tích tụ bằng chứng rác này phá hủy hoàn toàn biên quyết định phân loại. Do lớp benign chiếm đa số tuyệt đối (99.85%), lượng bằng chứng rác có xu hướng nghiêng hẳn về việc ủng hộ lớp benign trong hầu hết các trường hợp thông thường, làm Specificity sụp đổ xuống còn <strong>0.4605</strong>. Sự sụp đổ này buộc bộ tune ngưỡng tự động phải hạ ngưỡng quyết định xuống mức cực kỳ thấp để cứu vãn lỗi bỏ sót melanoma, tạo ra một chỉ số Sensitivity giả tạo bằng <strong>1.0000</strong> (mô hình dự đoán hầu hết mẫu là malignant do không thể phân biệt được ranh giới thực tế). Kết quả này chứng minh rằng: <i>Không có tác nhân cắt tỉa Microglia để dọn dẹp các đường truyền tin rác, mô hình EDL hoàn toàn mất đi khả năng hiệu chuẩn độ tin cậy và không thể ứng dụng trong lâm sàng.</i></p>
+
+            <h3>B. Tác nhân Tế bào sao (Astrocyte): Động lực giải thoát khỏi đóng băng cấu trúc (Topological Freezing)</h3>
+            <p>Ở chiều ngược lại, cấu hình <strong>Prune Only</strong> (chỉ có Microglia hoạt động) ghi nhận mức Macro AUROC là 0.8025 và Specificity là 0.7466, đều thấp hơn đáng kể so với phiên bản MDEP đầy đủ. Phân tích mã nguồn và quá trình tối ưu hóa topo làm sáng tỏ hiện tượng này qua hai khía cạnh toán học:</p>
+            <p><strong>1. Hiện tượng đóng băng cấu trúc (Topological Freezing):</strong> Trong huấn luyện thưa động (DST), không gian tìm kiếm cấu trúc rất lớn. Microglia hoạt động như một lực hướng tâm, liên tục triệt tiêu các kết nối có hiệu năng thấp để cô lập mạng lưới. Nếu không có Astrocyte cung cấp lực tăng trưởng \(G_{ij}\) (tương tác phát triển dựa trên độ bất định nhận thức \(u_e\)), một khi liên kết bị cắt tỉa (mask = 0), điểm số tiềm ẩn \(S_{ij}\) của nó sẽ rơi vào vùng âm sâu. Do gradient qua lớp cổng Smoothed STE bị triệt tiêu đối với các liên kết nằm xa biên sống sót \(\tau\):</p>
+            <div class="equation">
+                \[\sigma'\left(\frac{S_{ij} - \tau}{\gamma}\right) \to 0 \quad \text{khi} \quad S_{ij} \ll \tau\]
+            </div>
+            <p>các trọng số đã bị prune này sẽ bị khóa vĩnh viễn và không bao giờ có cơ hội tái hoạt động. Mạng lưới nhanh chóng rơi vào trạng thái "topo tĩnh" chỉ sau một vài epoch đầu tiên của pha thưa. Khả năng khám phá (exploration capacity) của mô hình bị triệt tiêu hoàn toàn.</p>
+            <p><strong>2. Suy thoái biên quyết định (Decision Boundary Degradation) và hụt chuẩn hóa lớp hiếm:</strong> Do topo bị đóng băng sớm, mạng lưới không thể tự điều chỉnh cấu trúc liên kết để thích ứng với các đặc trưng phức tạp của nhóm bệnh nhân hiếm gặp (melanoma). Trong quá trình huấn luyện, khi mô hình bắt đầu nhận biết được các vùng dữ liệu khó (đặc trưng bởi độ không chắc chắn nhận thức \(u_e\) cao ở các neuron tầng giữa), một mô hình MDEP đầy đủ sẽ kích hoạt Astrocyte để phát triển các liên kết mới hướng vào các vùng neuron này nhằm tăng độ phân giải biểu diễn đặc trưng. Việc thiếu đi lực đẩy này khiến không gian biểu diễn bị nghèo nàn hóa, dẫn đến hiện tượng "hụt biên quyết định", làm giảm khả năng phân biệt giữa các tổn thương lành tính phức tạp và ác tính giai đoạn đầu (Specificity giảm từ 0.9131 xuống 0.7466).</p>
+
+            <h3>C. Sự tương hỗ sinh học (Biological Synergy)</h3>
+            <p>Sự vượt trội của MDEP đầy đủ (Macro AUROC 0.8852, Specificity 0.9131, ECE 0.0479) so với cả hai phiên bản đơn lẻ chứng minh cơ chế tương tác giữa Microglia và Astrocyte không chỉ là sự lắp ghép cơ học, mà là một **hệ thống tương hỗ động**:</p>
+            <ul>
+                <li>Astrocyte đóng vai trò "khai phá không gian" (tăng trưởng), liên tục đưa ra các đề xuất liên kết mới tại các khu vực mà mô hình còn mơ hồ về mặt tri thức (epistemic uncertainty), làm tăng giá trị điểm số tiềm ẩn.</li>
+                <li>Microglia đóng vai trò "kiểm soát chất lượng" (triệt tiêu), ngay lập tức đánh giá các liên kết này. Nếu liên kết mới không đóng góp hiệu quả vào việc giảm tổn thất phân loại (\(c_1\)) hoặc chỉ mang lại nhiễu loạn ngẫu nhiên (\(c_2\)), Microglia sẽ nhanh chóng làm giảm điểm số của chúng để tiêu hủy ở bước tối ưu hóa tiếp theo.</li>
+            </ul>
+            <p>Sự đối kháng động này (Astrocyte làm tăng điểm số để giữ/tăng cường liên kết, Microglia làm giảm điểm số để prune liên kết) tạo ra một bộ lọc topo thích ứng mạnh mẽ, giữ cho mạng luôn duy trì được tính dẻo biểu diễn (representational plasticity) tối đa mà vẫn bảo đảm độ thưa phần cứng và độ chuẩn hóa thông tin cực kỳ tinh khiết.</p>
+
+            <h2>V. Đề xuất các cải tiến tiếp theo cho hệ thống MDEP</h2>
+            <p>Dựa trên các phân tích hành vi toán học của các tác nhân trong các cấu hình ablation, chúng tôi tổng hợp các đề xuất cải tiến tiềm năng. Phần lớn các đề xuất dưới đây là những hướng mở rộng, nghiên cứu bổ sung độc lập nhằm tối ưu hóa sâu hơn thiết kế nguyên bản của hệ thống:</p>
+
+            <h3>A. Tham số cân bằng động Epistemic-Aleatoric (\(\beta\))</h3>
+            <p>Trong thiết kế nguyên bản của tài liệu PDF gốc, hệ số cân bằng \(\beta^{(t)}\) giữa lực dự đoán nhãn lớp và lực giảm nhiễu ngẫu nhiên của Microglia không phải là một hằng số tĩnh, mà được thiết lập tự thích nghi động theo từng lớp và từng bước thời gian dựa trên tỷ số kỳ vọng độ lớn gradient thực tế của nhánh phân loại (\(\hat{M}_L\)) và nhánh ước lượng độ bất định ngẫu nhiên (\(\hat{M}_U\)):</p>
+            <div class="equation">
+                \[\beta^{(t)} = \lambda_b \frac{\mathbb{E}[\hat{M}_L^{(l)}]}{\mathbb{E}[\hat{M}_U^{(l)}] + \epsilon}\]
+            </div>
+            <p>Cơ chế gốc này giúp hệ thống tự cân bằng năng lượng tối ưu hóa giữa hai nhánh một cách thông minh mà không phụ thuộc vào tỉ lệ quy mô cố định. Tuy nhiên, ở các epoch đầu tiên khi gradient còn biến động mạnh, cơ chế này có thể gây nhiễu. Do đó, một hướng **sáng kiến mở rộng mới** là kết hợp thêm một lịch trình giảm dần theo thời gian huấn luyện (epoch-based decay schedule) để làm mịn quá trình hội tụ:</p>
+            <div class="equation">
+                \[\beta^{(t)} = \beta_0 \cdot \exp\left(-\lambda \cdot \frac{t}{T_{\text{max}}}\right) \cdot \frac{\mathbb{E}[\hat{M}_L^{(l)}]}{\mathbb{E}[\hat{M}_U^{(l)}] + \epsilon}\]
+            </div>
+            <p>Ở các epoch đầu, mô hình sẽ ưu tiên ổn định phân loại nhãn trước, sau đó lực khống chế nhiễu ngẫu nhiên của Microglia sẽ được điều chỉnh tăng dần ở giai đoạn hội tụ để tối ưu hóa triệt để chỉ số ECE.</p>
+
+            <h3>B. Astrocyte nhận thức lân cận cấu trúc (Neighborhood-Aware Astrocyte Regrowth)</h3>
+            <p>Hiện tại, tác nhân Astrocyte ánh xạ độ không chắc chắn nhận thức từ không gian node sang không gian cạnh (trọng số) bằng phép mở rộng trực tiếp (broadcasting) độc lập giữa các trọng số trong cùng một hàng/cột. Đây là một điểm đơn giản hóa so với thực tế sinh học.</p>
+            <p>Chúng tôi đề xuất một hướng mở rộng mới: tích hợp thêm một bộ lọc lân cận cấu trúc (neighborhood affinity filter). Một liên kết chỉ được khuyến khích sinh trưởng mạnh nếu nó kết nối đến một neuron có độ bất định nhận thức cao đồng thời nằm trong một nhóm (cluster) các liên kết có mật độ hoạt động tốt, tránh hiện tượng sinh trưởng phân tán, tạo ra các trọng số đơn lẻ dễ bị triệt tiêu ngay sau đó bởi Microglia:</p>
+            <div class="equation">
+                \[G_{ij}^{\text{local}} = G_{ij} \cdot \left( \epsilon + \frac{1}{|\mathcal{N}(i)|} \sum_{k \in \mathcal{N}(i)} M_{kj} \right)\]
+            </div>
+            <p>với \(\mathcal{N}(i)\) là tập hợp các chỉ số liên kết lân cận trong cùng một block thưa 2:4.</p>
+
+            <h3>C. Hàm phạt Entropy Dirichlet trong Hàm mất mát</h3>
+            <p>Để trực tiếp kiểm soát hành vi tích tụ bằng chứng rác của mô hình (vấn đề cốt lõi được phát hiện qua ablation), một đề xuất mở rộng khác là bổ sung số hạng phạt Entropy của phân phối Dirichlet vào hàm mục tiêu tối ưu hóa. Entropy của phân phối Dirichlet được định nghĩa là:</p>
+            <div class="equation">
+                \[\mathcal{H}(\text{Dir}(\boldsymbol{\alpha})) = \log \text{B}(\boldsymbol{\alpha}) + (S - K)\psi(S) - \sum_{c=1}^K (\alpha_c - 1)\psi(\alpha_c)\]
+            </div>
+            <p>Việc trực tiếp tối thiểu hóa hoặc ràng buộc entropy này trên các vùng dữ liệu có độ bất định ngẫu nhiên cao sẽ hỗ trợ đắc lực cho tác nhân Microglia trong việc ngăn chặn phân phối Dirichlet bị dàn phẳng hoặc phình to một cách vô căn cứ, tinh chỉnh sâu sắc hơn nữa chỉ số ECE lâm sàng.</p>
+
+            <h3>D. Cơ chế điều chỉnh nhiệt độ STE thích ứng dựa trên Mask Flop Rate</h3>
+            <p>Trong tài liệu gốc, mạng MDEP sử dụng một lịch trình suy giảm cosine tĩnh (cosine annealing schedule) để hạ dần nhiệt độ khám phá \(\gamma\) của lớp Smoothed STE từ 5.0 về một mức sàn cố định là **0.15** ở cuối quá trình huấn luyện nhằm ổn định cấu trúc topo:</p>
+            <div class="equation">
+                \[\gamma^{(t)} = \gamma_{\text{final}} + \frac{1}{2}(\gamma_{\text{initial}} - \gamma_{\text{final}})\left(1 + \cos\left(\pi \frac{t}{T_{\text{max}}}\right)\right)\]
+            </div>
+            <p>Mặc dù lịch trình cosine tĩnh này đảm bảo tính hội tụ cấu trúc, nó không thể tự điều chỉnh nếu mạng bị đóng băng topo sớm trước thời hạn (Astrocyte Crystallization) hoặc gặp hiện tượng thrashing. Do đó, chúng tôi đề xuất một hướng **sáng kiến mở rộng mới** là thiết lập một bộ phản hồi liên tục (feedback controller) tự động điều chỉnh nhiệt độ \(\gamma^{(t)}\) thích ứng dựa trên Mask Flop Rate thực tế:</p>
+            <div class="equation">
+                \[\gamma^{(t)} = \gamma^{(t-1)} \cdot \left( 1 + \eta_{\gamma} \cdot \left( \text{MFR}_{\text{roll}} - \text{MFR}_{\text{target}}(t) \right) \right)\]
+            </div>
+            <p>Cơ chế này sẽ làm tăng độ dẻo dai của cấu trúc thưa, chỉ cho phép nhiệt độ STE hạ xuống mức sàn 0.15 khi Mask Flop Rate thực sự đạt độ hội tụ mong muốn.</p>
+
+            <h3>E. Học tương phản minh chứng cho lớp hiếm (Evidential Contrastive Learning)</h3>
+            <p>Với tỷ lệ mẫu malignant cực kỳ thấp (~0.15%), thông tin gradient từ lớp mục tiêu dễ bị nhiễu hóa bởi các mẫu benign tương đồng. Chúng tôi đề xuất tích hợp cơ chế Học tương phản (Contrastive Learning) trực tiếp trên không gian tham số Dirichlet sinh ra bởi mô hình.</p>
+            <p>Bằng cách cực đại hóa khoảng cách phân phối (như khoảng cách Bhattacharyya hoặc divergence KL) giữa các biểu diễn minh chứng của mẫu ác tính và các mẫu lành tính khó phân biệt trong cùng một mini-batch, chúng tôi ép buộc mô hình phải tạo ra các ranh giới minh chứng rõ ràng và tách biệt:</p>
+            <div class="equation">
+                \[\mathcal{L}_{\text{contra}} = -\log \frac{\exp\left(-\mathcal{D}_{\text{JS}}(\text{Dir}(\boldsymbol{\alpha}_{\text{pos}}), \text{Dir}(\boldsymbol{\alpha}_{\text{neg}}))\right)}{\sum_{i} \exp\left(-\mathcal{D}_{\text{JS}}(\text{Dir}(\boldsymbol{\alpha}_{\text{pos}}), \text{Dir}(\boldsymbol{\alpha}_i))\right)}\]
+            </div>
+            <p>Cải tiến này sẽ giúp gia tăng đáng kể Macro AUROC và cải thiện độ nhạy lâm sàng (Sensitivity) mà không cần phải hy sinh độ đặc hiệu Specificity thông qua việc hạ thấp ngưỡng phán quyết một cách nhân tạo.</p>ức cao đồng thời nằm trong một nhóm (cluster) các liên kết có mật độ hoạt động tốt, tránh hiện tượng sinh trưởng phân tán, tạo ra các trọng số đơn lẻ dễ bị triệt tiêu ngay sau đó bởi Microglia:</p>
+            <div class="equation">
+                \[G_{ij}^{\text{local}} = G_{ij} \cdot \left( \epsilon + \frac{1}{|\mathcal{N}(i)|} \sum_{k \in \mathcal{N}(i)} M_{kj} \right)\]
+            </div>
+            <p>với \(\mathcal{N}(i)\) là tập hợp các chỉ số liên kết lân cận trong cùng một block thưa 2:4.</p>
+
+            <h3>C. Hàm phạt Entropy Dirichlet trong Hàm mất mát</h3>
+            <p>Để trực tiếp kiểm soát hành vi tích tụ bằng chứng rác của mô hình (vấn đề cốt lõi được phát hiện qua ablation), chúng tôi đề xuất bổ sung số hạng phạt Entropy của phân phối Dirichlet vào hàm mục tiêu tối ưu hóa. Entropy của phân phối Dirichlet được định nghĩa là:</p>
+            <div class="equation">
+                \[\mathcal{H}(\text{Dir}(\boldsymbol{\alpha})) = \log \text{B}(\boldsymbol{\alpha}) + (S - K)\psi(S) - \sum_{c=1}^K (\alpha_c - 1)\psi(\alpha_c)\]
+            </div>
+            <p>Việc trực tiếp tối thiểu hóa hoặc ràng buộc entropy này trên các vùng dữ liệu có độ bất định ngẫu nhiên cao sẽ hỗ trợ đắc lực cho tác nhân Microglia trong việc ngăn chặn phân phối Dirichlet bị dàn phẳng hoặc phình to một cách vô căn cứ, tinh chỉnh sâu sắc hơn nữa chỉ số ECE lâm sàng.</p>
+
+            <h3>D. Cơ chế điều chỉnh nhiệt độ STE thích ứng dựa trên Mask Flop Rate</h3>
+            <p>Trong kiến trúc MDEP hiện tại, nhiệt độ \(\gamma\) của lớp Smoothed STE được điều khiển bằng lịch trình cosine tĩnh (cosine annealing) từ 5.0 về 0.15. Nếu mô hình đạt hội tụ cấu trúc quá nhanh (Mask Flop Rate tiệm cận 0 trước epoch 12), hệ thống sẽ bị đóng băng topo sớm một cách thụ động. Ngược lại, nếu Mask Flop Rate vẫn ở mức cao ở các epoch cuối, cấu trúc thưa sẽ bị dao động liên tục (thrashing), cản trở sự ổn định của ResNet backbone.</p>
+            <p>Chúng tôi đề xuất một bộ điều khiển phản hồi liên tục (feedback controller) tự động điều chỉnh nhiệt độ \(\gamma^{(t)}\) dựa trên Mask Flop Rate rolling average (\(\text{MFR}_{\text{roll}}\)):</p>
+            <div class="equation">
+                \[\gamma^{(t)} = \gamma^{(t-1)} \cdot \left( 1 + \eta_{\gamma} \cdot \left( \text{MFR}_{\text{roll}} - \text{MFR}_{\text{target}}(t) \right) \right)\]
+            </div>
+            <p>Cơ chế này đảm bảo nhiệt độ STE chỉ giảm sâu khi cấu trúc mạng thực sự đã tìm được điểm tối ưu ổn định, duy trì tính dẻo topo lâu hơn nếu mạng vẫn đang trong quá trình chuyển đổi mạnh mẽ.</p>
+
+            <h3>E. Học tương phản minh chứng cho lớp hiếm (Evidential Contrastive Learning)</h3>
+            <p>Với tỷ lệ mẫu malignant cực kỳ thấp (~0.15%), thông tin gradient từ lớp mục tiêu dễ bị nhiễu hóa bởi các mẫu benign tương đồng. Chúng tôi đề xuất tích hợp cơ chế Học tương phản (Contrastive Learning) trực tiếp trên không gian tham số Dirichlet sinh ra bởi mô hình.</p>
+            <p>Bằng cách cực đại hóa khoảng cách phân phối (như khoảng cách Bhattacharyya hoặc divergence KL) giữa các biểu diễn minh chứng của mẫu ác tính và các mẫu lành tính khó phân biệt trong cùng một mini-batch, chúng tôi ép buộc mô hình phải tạo ra các ranh giới minh chứng rõ ràng và tách biệt:</p>
+            <div class="equation">
+                \[\mathcal{L}_{\text{contra}} = -\log \frac{\exp\left(-\mathcal{D}_{\text{JS}}(\text{Dir}(\boldsymbol{\alpha}_{\text{pos}}), \text{Dir}(\boldsymbol{\alpha}_{\text{neg}}))\right)}{\sum_{i} \exp\left(-\mathcal{D}_{\text{JS}}(\text{Dir}(\boldsymbol{\alpha}_{\text{pos}}), \text{Dir}(\boldsymbol{\alpha}_i))\right)}\]
+            </div>
+            <p>Cải tiến này sẽ giúp gia tăng đáng kể Macro AUROC và cải thiện độ nhạy lâm sàng (Sensitivity) mà không cần phải hy sinh độ đặc hiệu Specificity thông qua việc hạ thấp ngưỡng phán quyết một cách nhân tạo.</p>
+
+            <h2>VI. Kết luận</h2>
+            <p>Thông qua báo cáo nghiên cứu ablation study này, vai trò thiết yếu của sự phối hợp đa tác nhân trong hệ thống MDEP đã được chứng minh và định lượng rõ ràng. Tác nhân Microglia đóng vai trò quyết định trong việc khống chế bằng chứng rác để ổn định phân phối hiệu chuẩn ECE, trong khi tác nhân Astrocyte đảm bảo tính dẻo topo để duy trì độ rộng biên quyết định và Macro AUROC trên lớp dữ liệu mất cân bằng cực đoan. Sự sụp đổ hiệu năng của các phiên bản ablation đơn lẻ là minh chứng thực nghiệm mạnh mẽ ủng hộ mô hình kết hợp sinh học đầy đủ. Những hướng đề xuất cải tiến được trình bày trong báo cáo hứa hẹn sẽ là những bước đi chiến lược để tối ưu hóa MDEP hướng tới ứng dụng thực tế trong các thiết bị hỗ trợ chẩn đoán y khoa hiệu năng cao.</p>
+        </div>
+    </div>
+</body>
+</html>

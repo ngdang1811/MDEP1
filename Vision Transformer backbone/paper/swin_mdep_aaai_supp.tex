@@ -1,0 +1,307 @@
+% ============================================================================
+%   Comprehensive Research Report on the Universal MDEP Architecture
+%   Mathematical Foundations, Multi-Agent Dynamics, and Clinical Applications
+%
+%   File: swin_mdep_report_en.tex
+%   Version: 2.0 (Updated 06/2026)
+%   Language: English
+% ============================================================================
+
+\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+\usepackage{aaai24}  % DO NOT CHANGE THIS
+\usepackage{times}  % DO NOT CHANGE THIS
+\usepackage{helvet}  % DO NOT CHANGE THIS
+\usepackage{courier}  % DO NOT CHANGE THIS
+\usepackage[hyphens]{url}  % DO NOT CHANGE THIS
+\usepackage{graphicx} % DO NOT CHANGE THIS
+\urlstyle{rm} % DO NOT CHANGE THIS
+\def\UrlFont{\rm}  % DO NOT CHANGE THIS
+\usepackage{natbib}  % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\usepackage{caption} % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\frenchspacing  % DO NOT CHANGE THIS
+\setlength{\pdfpagewidth}{8.5in} % DO NOT CHANGE THIS
+\setlength{\pdfpageheight}{11in} % DO NOT CHANGE THIS
+
+% --- Additional Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath, amssymb, amsthm, bm}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+\usepackage{xcolor}
+
+% --- Custom commands ---
+\newcommand{\Dir}{\text{Dir}}
+\newcommand{\KL}{\text{KL}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Norm}{\text{Norm}}
+\newcommand{\softplus}{\text{Softplus}}
+
+\newtheorem{remark}{Remark}
+\newtheorem{proposition}{Proposition}
+
+% ============================================================================
+\title{Universal MDEP Architecture: Integrating Evidential Deep Learning with Dynamic Structured Sparsity}
+\author{Anonymous AAAI Submission}
+
+\begin{document}
+\title{Supplementary Material: Microglial-Driven Evidential Pruning (MDEP)}
+\maketitle
+\appendix
+\section{Mathematical Proofs and Derivations}
+
+\subsection{System Optimization Configuration}
+\begin{table}[H]
+\centering
+\caption{System Optimization Configuration and Two-Phase Schedule.}
+\label{tab:config}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Phase / Component} & \textbf{Parameter} & \textbf{Role Description} \\
+\midrule
+\multicolumn{3}{l}{\emph{Architecture}} \\
+Student Backbone & Swin-T (28.3M params) & ImageNet-1K pretrained \\
+Teacher Backbone & ResNet-18 Evidential & Dense, frozen, EDL head \\
+Number of Classes ($K$) & 2 & Benign / Malignant \\
+\midrule
+\multicolumn{3}{l}{\emph{Phase 1: Dense Warmup ($t < 5$ epochs)}} \\
+Mask & Locked entirely at $\bm{1}$ & Dense network, no pruning \\
+Focal exponent $\gamma(t)$ & $0.0$ & Disabled for baseline convergence stability \\
+Distillation weight $\alpha_d$ & $0.5$ (maximum) & Relying on Teacher's knowledge \\
+\midrule
+\multicolumn{3}{l}{\emph{Phase 2: Dynamic Sparsity ($t \ge 5$ epochs)}} \\
+Mask & NVIDIA 2:4 & Top-2-of-4 from $\bm{S}$ \\
+Microglia--Astrocyte & Activated & Update $\bm{S}$ every $N_{\text{update}} = 10$ steps \\
+$\gamma_t$ (STE) & Cosine: $5.0 \to 0.15$ & Floor $0.15$ preserves boundary gradients \\
+$\alpha_d$ & Cosine: $0.5 \to 0.05$ & Gradually releases Student \\
+$\gamma_{\text{focal}}$ & Linear $\to 1.2$ & Focus on hard samples \\
+\midrule
+\multicolumn{3}{l}{\emph{Optimization}} \\
+Optimizer & AdamW~\cite{loshchilov2019decoupled, kingma2015adam} & $\beta_1=0.9$, $\beta_2=0.999$ \\
+Learning rate & $2 \times 10^{-5}$ & Linear warmup from $10^{-6}$ \\
+Weight decay & $0.01$ & Applied to $\Theta_{\text{train}}$, excluding $\bm{S}$ \\
+Gradient clipping & $1.0$ & Global $L_2$ norm \\
+Batch size & 32 & --- \\
+Total epochs ($T$) & 20 & --- \\
+Warmup epochs ($t_w$) & 5 & 25\% of budget \\
+\midrule
+\multicolumn{3}{l}{\emph{EFL}} \\
+$\gamma_{\text{base}}$ (Focal) & $1.2$ & Focal exponent \\
+$\lambda_{\text{KL}}$ & $0.1$ & KL regularization factor \\
+$t_{\text{anneal}}$ (KL) & 10 & KL annealing epochs \\
+\midrule
+\multicolumn{3}{l}{\emph{MDEP}} \\
+$\gamma_{\text{initial}}$ (STE) & $5.0$ & Initial STE temperature \\
+$\gamma_{\text{final}}$ (STE) & $0.15$ & Final STE temperature \\
+$\beta_m$ (EMA) & $0.95$ & Momentum coefficient \\
+$\eta$ (Step $S$) & $0.02$ & Structural learning rate \\
+$\beta$ (Microglia) & $1.0$ & Weight of $u_a$ \\
+$S_{\max}$ & $5.0$ & Score boundary clamp \\
+\midrule
+\multicolumn{3}{l}{\emph{Distillation}} \\
+$\alpha_{d,\text{init}}$ & $0.5$ & Initial distillation weight \\
+$\alpha_{d,\text{final}}$ & $0.05$ & Final distillation weight \\
+Schedule & Cosine decay & After $t_w$ epochs \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Proof of Proposition 1 (Epistemic Uncertainty Bounds)}
+For any valid concentration vector $\bm{\alpha}$, the value of $u_e$ always lies in the interval $(0, 1]$. By definition, the epistemic uncertainty is formulated as $u_e = \frac{K}{S} = \frac{K}{\sum_{c=1}^K (e_c + 1)}$. Since the Softplus activation ensures that the evidence $e_c \ge 0$ for all classes $c$, the minimum possible value of the Dirichlet strength $S$ is precisely $K$ (when $e_c = 0 \, \forall c$). Therefore, the maximum value of $u_e$ is bounded at $\frac{K}{K} = 1.0$, which is achieved if and only if the network predicts absolutely zero evidence ($\bm{e} = \bm{0}$), representing total prior ignorance. Conversely, as the evidence $e_c$ grows infinitely ($S \to \infty$), the fraction $u_e \to 0$.
+
+\subsection{Proof of Proposition 2 (Non-negativity of Aleatoric Uncertainty)}
+Aleatoric uncertainty is defined by the digamma variance terms. For any $K > 1$, the Dirichlet parameters satisfy $\alpha_c < S$. Because the digamma function $\psi(x) = \frac{d}{dx} \ln \Gamma(x)$ is strictly monotonically increasing for all $x > 0$ (i.e., its derivative, the trigamma function $\psi'(x) > 0$), we mathematically guarantee that $\psi(S + 1) > \psi(\alpha_c + 1)$. This strict inequality ensures that every individual term within the summation $\sum_{c=1}^K \frac{\alpha_c}{S} [\psi(S + 1) - \psi(\alpha_c + 1)]$ is strictly positive. Consequently, the total aleatoric uncertainty $u_a$ is inherently non-negative ($u_a \ge 0$).
+
+
+\subsection{Extended Optimization Dynamics}
+\subsection{Anti-Crystallization}\label{subsec:anti_crystal}
+
+If an entire layer lacks any candidate connections offering useful growth gradients ($\max_{ij} G_{ij} \le 10^{-8}$), MDEP injects an emergency response:
+\begin{equation}\label{eq:anti_crystal_eq}
+    \tilde{G}_{ij} = G_{ij} + \max\!\left(0.0,\; \epsilon_{ij} \cdot \text{Norm}(u_{e,i}^{(\text{node})})\right)
+\end{equation}
+where $\epsilon_{ij} \sim \mathcal{N}(0, 0.0316^2)$. Due to the multiplicative structure, the system prioritizes "experimenting" by opening new links in regions lacking evidence.
+
+\subsection{Latent Score Updates via EMA}\label{subsec:score_update}
+
+Continuous score updates are calculated at the end of each training step by combining the opposing forces of growth and pruning:
+\begin{equation}\label{eq:delta_S}
+    \Delta S_{ij} = G_{ij} - C_{ij}
+\end{equation}
+To smooth gradient fluctuations across mini-batches, score momentum is applied:
+\begin{align}
+    V_{ij}^{(t)} &= \beta_m V_{ij}^{(t-1)} + (1 - \beta_m) \Delta S_{ij} \\
+    S_{ij}^{(t)} &= S_{ij}^{(t-1)} + \eta V_{ij}^{(t)}
+\end{align}
+where $\beta_m = 0.95$ is the EMA coefficient, and $\eta = 0.02$ is the structural update rate. To prevent score saturation (which would permanently lock connections), MDEP centers and clamps the scores:
+\begin{align}
+    S_{ij}^{(t)} &\leftarrow S_{ij}^{(t)} - \text{mean}(\bm{S}^{(t)}) \\
+    S_{ij}^{(t)} &\leftarrow \text{clamp}(S_{ij}^{(t)}, -5.0, 5.0)
+\end{align}
+This centering ensures that the average latent score of each layer remains 0, maintaining healthy competition among links.
+
+\begin{remark}[Role of Residual Connections]
+The residual connections in both ResNet-50 and Swin Transformer act as safe bypass routes. By preserving identity mapping pathways, they protect spatial information flow from abrupt topological disruption when the network applies 50\% parameter structured sparsity.
+\end{remark}
+
+
+\subsection{Detailed Backbone Instantiations}
+\subsection{Integration with ResNet-50 (ResNet-MDEP)}\label{subsec:resnet}
+
+Applying MDEP's bi-directional sparsity updates to the convolutional ResNet-50 backbone requires wrapping its internal layers. Inside each residual Bottleneck block of ResNet-50, we replace all convolutional layers with our sparse \texttt{MDEPConv2d} layers, including:
+\begin{itemize}
+    \item \texttt{conv1}: $1 \times 1$ convolution for bottleneck channel reduction.
+    \item \texttt{conv2}: $3 \times 3$ convolution for spatial feature processing.
+    \item \texttt{conv3}: $1 \times 1$ convolution for bottleneck channel expansion.
+\end{itemize}
+
+\paragraph{Preserving Low-Level Features.}
+Just as with the patch projection in transformers, the first convolution of the ResNet-50 network (\texttt{conv1}, a $7 \times 7$ conv with stride 2 and padding 3) operates directly on the raw input pixels and is parameter-light. Enforcing structured sparsity at this entry point would filter out crucial visual details. Consequently, the initial convolutional layer is explicitly excluded from MDEP and remains dense.
+
+\paragraph{Convolutional Activation Gradient Pooling.}
+For convolutional layers, the activation gradient is a 4D tensor. Let $\bm{g}_{\text{act}}^{(l)} = \frac{\partial \bar{u}_e}{\partial \bm{a}^{(l)}} \in \R^{B \times C_{\text{out}} \times H \times W}$ represent the gradient of mean epistemic uncertainty with respect to the layer's output activation tensor. To define a node-level uncertainty signal for each channel, the Astrocyte agent pools this gradient over batch and spatial dimensions:
+\begin{equation}\label{eq:conv_pooling}
+    u_{e,i}^{(\text{node})} = \frac{1}{B \cdot H \cdot W} \sum_{b=1}^B \sum_{y=1}^H \sum_{x=1}^W \left| g_{\text{act}, i}^{(l)}(b, y, x) \right|
+\end{equation}
+yielding a channel-wise vector $\bm{u}_e^{(\text{node})} \in \R^{C_{\text{out}}}$. This vector is then expanded to match the dimensions of the convolutional weights $\bm{W}^{(l)} \in \R^{C_{\text{out}} \times C_{\text{in}} \times K_h \times K_w}$:
+\begin{equation}
+    g_{1, ijkx} = u_{e,i}^{(\text{node})}
+\end{equation}
+which ensures the Astrocyte growth signal is aligned with weight-level gradients.
+
+\subsection{Compatibility with Swin Transformer (Swin-MDEP)}\label{subsec:swin}
+
+Adapting MDEP to the Swin Transformer~\cite{liu2021swin, liu2022swinv2} introduces more complex challenges. In the 4-stage hierarchical Swin-MDEP, all linear projections inside the self-attention and MLP blocks are replaced with sparse \texttt{MDEPLinear} layers, including:
+\begin{itemize}
+    \item \texttt{attn.qkv}: Query, Key, Value projection layer.
+    \item \texttt{attn.proj}: Linear output attention projection.
+    \item \texttt{mlp.fc1} and \texttt{mlp.fc2}: Hidden channel expansion and contraction layers.
+\end{itemize}
+
+\paragraph{Preserving the Patch Partition.}
+The initial patch projection layer (\texttt{Conv2D(3, 96, kernel\_size=4, stride=4)}) has a tiny parameter count (only 4,608 weights) but is responsible for extracting raw RGB features. Enforcing 2:4 structured sparsity here would force the network to discard 50\% of the raw pixel information at the gateway of the system. Therefore, this layer is explicitly excluded from MDEP sparsification.
+
+\paragraph{Overcoming PyTorch Native Attention Bypass.}
+In the official PyTorch implementation of the Swin Transformer (\texttt{torchvision.models.swin\_transformer}), the \texttt{ShiftedWindowAttention} module optimizes computation by directly calling \texttt{F.linear} with the underlying weight tensors of the \texttt{qkv} and \texttt{proj} layers, entirely bypassing their respective \texttt{forward} methods. This structural bypass prevents the dynamic 2:4 structured sparsity masks and the \texttt{SmoothedSTE} gradients from taking effect during training. To override the native functional attention bypass in PyTorch's implementation, we explicitly redefine the forward execution graph of the \texttt{ShiftedWindowAttention} module to enforce the dynamic sparse mask before the functional call.
+
+\paragraph{Generalized Activation Gradient Pooling Operator.}
+Since activation tensors vary in shape across Swin's stages due to Patch Merging, Swin-MDEP introduces a generalized pooling operator. Let $\bm{g}_{\text{act}}^{(l)} = \frac{\partial \bar{u}_e}{\partial \bm{a}^{(l)}}$ be the gradient of the mean epistemic uncertainty $\bar{u}_e = \frac{1}{N}\sum_n u_{e,n}$ with respect to the layer activation $\bm{a}^{(l)}$. By averaging the absolute value of this gradient over all spatial dimensions (excluding the channel dimension), the high-dimensional tensor is reduced to a 1D vector $\bm{u}_e^{(\text{node})} \in \R^D$:
+\begin{equation}\label{eq:activation_pooling}
+    \bm{u}_e^{(\text{node})} = \text{mean}\!\left(|\bm{g}_{\text{act}}^{(l)}|,\; \text{dim}=[0, 1, \ldots, \text{ndim}-2]\right)
+\end{equation}
+This establishes a uniform basis for the Astrocyte agent, permitting evaluation of channel-wise evidence hunger regardless of spatial resolution.
+
+% ============================================================================
+%  7. OPTIMIZATION FRAMEWORK
+% ============================================================================
+
+\subsection{Extended Dirichlet KL Knowledge Distillation Details}
+\subsection{Dirichlet KL Knowledge Distillation}\label{subsec:distillation}
+
+To stabilize the sparse Swin-T student network during its transition to 2:4 structured sparsity, the system applies knowledge distillation techniques~\cite{hinton2015distilling, gou2021knowledge}, specifically evidential distribution distillation~\cite{malinin2019ensemble} from a fully converged dense Evidential ResNet-18 teacher model~\cite{he2016deep}.
+
+\begin{remark}[Why ResNet-18 instead of ResNet-50 as Teacher?]
+Three main reasons justify this selection:
+\begin{enumerate}[label=(\roman*)]
+    \item \textbf{Cross-Architecture Inductive Bias:} ResNet-18 is a pure CNN with strong local spatial inductive biases. Distilling from a CNN to a ViT helps transfer spatial locality to Swin-T's Self-Attention mechanism, focusing attention on lesion regions.
+    \item \textbf{Preventing Overfitting on Rare Minority Classes:} A ResNet-50 teacher is highly complex (50 layers with bottleneck blocks) and prone to memorizing the small number of malignant samples (${\sim}390$), which distorts its Dirichlet uncertainty estimation ($\bm{\alpha}_T$). ResNet-18 is simpler and acts as a regularizer, providing better-calibrated teacher distributions.
+    \item \textbf{Evaluation and Training Efficiency:} While a frozen teacher in evaluation mode does not require backpropagation memory, hosting a massive teacher model (e.g., ResNet-50 with 25.6M parameters) alongside the student model during training increases the forward evaluation overhead. Using a lighter ResNet-18 (11.7M parameters) minimizes this forward pass computation, leading to faster training runs.
+\end{enumerate}
+\end{remark}
+
+\paragraph{Teacher Model Configuration.}
+The teacher is a customized ResNet-18 with an evidential classification head ($\text{Linear}(512, K) \to \softplus(\cdot)$) and \texttt{MDEPConv2d}/\texttt{MDEPLinear} layers, pre-trained to convergence on the ISIC 2024 dataset.
+
+\paragraph{Dynamic Path Resolution.}
+To ensure seamless execution across local development environments and cloud platforms (such as Kaggle), the system automatically scans candidate paths for the teacher checkpoint (\texttt{model\_checkpoint.pth}):
+\begin{enumerate}
+    \item Current working directory: \texttt{model\_checkpoint.pth}
+    \item Parallel directory: \texttt{../RESNET18_evidential/model\_checkpoint.pth}
+    \item Local subdirectory: \texttt{./RESNET18_evidential/model\_checkpoint.pth}
+    \item Kaggle input path: \texttt{/kaggle/input/mdep-resnet50-backbone/model\_checkpoint.pth}
+\end{enumerate}
+The teacher weights are loaded from the first matching path, and the teacher model is frozen (\texttt{requires\_grad = False}).
+
+\paragraph{Distillation Loss Formulation.}
+The analytical KL divergence between the student and teacher Dirichlet distributions is formulated as:
+\begin{align}
+    \KL(\Dir(\bm{\alpha}_S) \| \Dir(\bm{\alpha}_T)) &= \ln\Gamma(S_S) - \ln\Gamma(S_T) - \sum_{c=1}^K \left[\ln\Gamma(\alpha_{S,c}) - \ln\Gamma(\alpha_{T,c})\right] \nonumber \\
+    &\quad + \sum_{c=1}^K (\alpha_{S,c} - \alpha_{T,c})\left[\psi(\alpha_{S,c}) - \psi(S_S)\right] \label{eq:dir_kl_full}
+\end{align}
+The distillation weight $\alpha_d(t)$ is scheduled via a cosine decay function:
+\begin{equation}\label{eq:alpha_d}
+    \alpha_d(t) = \begin{cases}
+        \alpha_{d,\text{init}} & \text{if } t < t_w \\[6pt]
+        \alpha_{d,\text{final}} + \dfrac{\alpha_{d,\text{init}} - \alpha_{d,\text{final}}}{2}\left[1 + \cos\!\left(\pi \cdot \dfrac{t - t_w}{T - t_w}\right)\right] & \text{if } t \ge t_w
+    \end{cases}
+\end{equation}
+with $\alpha_{d,\text{init}} = 0.5$ and $\alpha_{d,\text{final}} = 0.05$. The total loss is:
+\begin{equation}\label{eq:total_loss}
+    L_{\text{total}} = L_{\text{EFL}}(\bm{e}_S, \bm{y}, t) + \alpha_d(t) \cdot L_{\text{distill}}
+\end{equation}
+
+Crucially, while Swin-MDEP relies on this distillation protocol, the convolutional ResNet-50 MDEP model is trained in a self-contained manner directly using the Evidential Focal Loss (Equation~\ref{eq:efl}) without a teacher model.
+
+\paragraph{Three-Fold Role of Knowledge Distillation:}
+\begin{enumerate}
+    \item \textbf{Sensitivity Improvement:} The teacher provides "soft" evidential distributions, assisting the student in separating ambiguous boundaries.
+    \item \textbf{Better Uncertainty Calibration:} The distillation loss aligns the student's Dirichlet parameters with the teacher's, reducing the student's ECE.
+    \item \textbf{Sparsity Protection:} The KD loss provides a regularization force that guides weight optimization when 50\% of the connections are pruned.
+\end{enumerate}
+
+% ============================================================================
+%  8. EXPERIMENTAL SETUP
+% ============================================================================
+
+\subsection{Extended Dataset Description and Preprocessing}
+\subsection{ISIC 2024 Dataset}\label{subsec:isic}
+
+The performance of MDEP is evaluated on the clinical \textbf{ISIC 2024 (Skin Cancer Detection with 3D-TBP)} dataset~\cite{isic2024, codella2019skin, tschandl2018ham10000}. The extreme class imbalance (malignant cases account for only $0.15\%$ of the samples, a ratio of $1{:}670$) represents a challenging optimization landscape.
+
+\paragraph{Data Processing and Training Set Balancing:}
+\begin{itemize}
+    \item \textbf{Stratified Split:} We partition the dataset into a rigorous 70/10/20 Train/Validation/Test split using a fixed seed (\texttt{random\_state=42}). The validation set is strictly isolated to act as a proxy for threshold optimization, while the 20\% test partition is held completely unseen until the final evaluation, effectively eliminating threshold-induced data leakage.
+    \item \textbf{Under-sampling \& Calibration:} To balance the training set, we keep all malignant samples and randomly sample benign samples at a ratio of $1:20$. This under-sampling reduces the training set size, accelerating training by more than 50$\times$. To correct the severe distributional shift introduced by under-sampling, we integrate a \textbf{Prior Probability Calibration} layer directly into the Evidential Deep Learning head before the Softplus activation, effectively neutralizing the under-sampling bias. Given the true class prior probabilities $\mathbf{p}_{\text{true}}$ and the under-sampled training prior probabilities $\mathbf{p}_{\text{train}}$, the raw logits $\mathbf{z}$ are adjusted prior to the evidence activation via:
+    \begin{equation}
+        \tilde{z}_c = z_c + \ln(p_{\text{true}, c}) - \ln(p_{\text{train}, c})
+    \end{equation}
+    This log-prior correction cleanly decouples the model's predictive evidence from the artificially inflated frequency of the malignant class during training, allowing the Dirichlet distributions to remain calibrated to the true clinical prevalence. The test set distribution is left untouched to represent clinical reality.
+    \item \textbf{Data Augmentation:} Horizontal and vertical flips are applied to the training set; test samples are only resized and normalized.
+    \item \textbf{ImageNet Normalization:} Normalization is applied using $\mu = [0.485, 0.456, 0.406]$ and $\sigma = [0.229, 0.224, 0.225]$.
+    \item \textbf{Input Dimension:} Images are resized to $224 \times 224$ pixels.
+\end{itemize}
+
+
+\subsection{Detailed Baseline Configurations}
+\subsection{Baselines}\label{subsec:baselines}
+
+Swin-MDEP is directly compared against several strong baselines covering static networks, Bayesian methods, and uncertainty-quantified models:
+\begin{itemize}
+    \item \textbf{Traditional Static Architectures:} ResNet-50~\cite{he2016deep} and ViT-B/16~\cite{dosovitskiy2021image}, representing standard CNNs and Vision Transformers trained with softmax cross-entropy.
+    \item \textbf{Bayesian Approaches:} Deep Ensembles~\cite{lakshminarayanan2017simple} and MC Dropout~\cite{gal2016dropout} on ResNet-50, representing uncertainty estimation via multi-model inference or stochastic forward passes.
+    \item \textbf{Uncertainty-Quantified and Efficient Networks:} EfficientNet-B4~\cite{tan2019efficientnet}, Posterior Network~\cite{charpentier2020posterior}, and EF-DST, representing efficiency-optimized, density-based, and sparse evidential baselines, respectively.
+\end{itemize}
+
+
+\subsection{Detailed Evaluation Metrics Formulation}
+\subsection{Evaluation Metrics}\label{subsec:metrics}
+
+Model performance is evaluated across three categories of clinical metrics:
+\begin{itemize}
+    \item \textbf{Classification Performance:} Sensitivity (recall) measures the rate of correctly identified malignant cases, Specificity measures the rate of correctly excluded benign cases, and Macro-AUROC measures general discriminative capability under skewed distributions.
+    \item \textbf{Probability Calibration:} Brier Score and Expected Calibration Error (ECE)~\cite{naeini2015obtaining} evaluate the reliability of predicted probabilities and uncertainty bounds.
+    \item \textbf{Selective Classification:} Area Under the Risk--Coverage Curve (AURC)~\cite{geifman2017selective, geifman2019selectivenet, jaeger2023call} measures the model's self-awareness of risk when it defers difficult cases to specialists.
+\end{itemize}
+
+% ============================================================================
+%  9. RESULTS AND ANALYSIS
+% ============================================================================
+
+\end{document}
